@@ -1,4 +1,4 @@
-module github.com/dawnsgo/dawn/eventbus/redis
+module github.com/dawnsgo/dawn/locate/redis
 
 go 1.23.0
 
