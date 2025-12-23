@@ -3,7 +3,7 @@ package nats
 import (
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/etc"
+	"github.com/dawnsgo/dawn/etc"
 	"github.com/nats-io/nats.go"
 )
 

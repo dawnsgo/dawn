@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/registry"
+	"github.com/dawnsgo/dawn/registry"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 

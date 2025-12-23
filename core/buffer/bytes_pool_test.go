@@ -3,7 +3,7 @@ package buffer_test
 import (
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/core/buffer"
+	"github.com/dawnsgo/dawn/core/buffer"
 )
 
 func Test_BytesPool(t *testing.T) {

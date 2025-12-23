@@ -1,8 +1,8 @@
 package http
 
 import (
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/transport"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/transport"
 	"github.com/gofiber/fiber/v3"
 )
 

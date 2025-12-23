@@ -11,7 +11,7 @@ import (
 	"encoding/binary"
 	"net"
 
-	innernet "github.com/dawnsgo/dawn/v2/core/net"
+	innernet "github.com/dawnsgo/dawn/core/net"
 )
 
 // ExtractIP 提取主机地址

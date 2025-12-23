@@ -2,7 +2,7 @@ package lock_test
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/lock"
+	"github.com/dawnsgo/dawn/lock"
 	"testing"
 )
 

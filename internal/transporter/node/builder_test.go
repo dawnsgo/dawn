@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/core/buffer"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/node"
-	"github.com/dawnsgo/dawn/v2/utils/xuuid"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/core/buffer"
+	"github.com/dawnsgo/dawn/internal/transporter/node"
+	"github.com/dawnsgo/dawn/utils/xuuid"
 )
 
 func TestBuilder(t *testing.T) {

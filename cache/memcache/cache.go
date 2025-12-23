@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/dawnsgo/dawn/v2/cache"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
-	"github.com/dawnsgo/dawn/v2/utils/xrand"
-	"github.com/dawnsgo/dawn/v2/utils/xreflect"
+	"github.com/dawnsgo/dawn/cache"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/utils/xconv"
+	"github.com/dawnsgo/dawn/utils/xrand"
+	"github.com/dawnsgo/dawn/utils/xreflect"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
 )

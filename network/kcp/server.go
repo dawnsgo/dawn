@@ -8,8 +8,8 @@
 package kcp
 
 import (
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/network"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/network"
 	"github.com/xtaci/kcp-go/v5"
 )
 

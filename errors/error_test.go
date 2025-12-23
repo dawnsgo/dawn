@@ -2,8 +2,8 @@ package errors_test
 
 import (
 	"fmt"
-	"github.com/dawnsgo/dawn/v2/codes"
-	"github.com/dawnsgo/dawn/v2/errors"
+	"github.com/dawnsgo/dawn/codes"
+	"github.com/dawnsgo/dawn/errors"
 	"testing"
 )
 

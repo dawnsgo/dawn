@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/dawnsgo/dawn/v2/codes"
-	"github.com/dawnsgo/dawn/v2/core/stack"
+	"github.com/dawnsgo/dawn/codes"
+	"github.com/dawnsgo/dawn/core/stack"
 )
 
 var (

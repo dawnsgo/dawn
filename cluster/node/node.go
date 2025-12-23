@@ -6,14 +6,14 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/component"
-	"github.com/dawnsgo/dawn/v2/core/info"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/node"
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/registry"
-	"github.com/dawnsgo/dawn/v2/transport"
-	"github.com/dawnsgo/dawn/v2/utils/xcall"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/component"
+	"github.com/dawnsgo/dawn/core/info"
+	"github.com/dawnsgo/dawn/internal/transporter/node"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/registry"
+	"github.com/dawnsgo/dawn/transport"
+	"github.com/dawnsgo/dawn/utils/xcall"
 	"golang.org/x/sync/errgroup"
 )
 

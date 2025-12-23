@@ -3,7 +3,7 @@ package config
 import (
 	"context"
 
-	"github.com/dawnsgo/dawn/v2/core/value"
+	"github.com/dawnsgo/dawn/core/value"
 )
 
 var globalConfigurator Configurator

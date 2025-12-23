@@ -1,7 +1,7 @@
 package xvalidate_test
 
 import (
-	"github.com/dawnsgo/dawn/v2/utils/xvalidate"
+	"github.com/dawnsgo/dawn/utils/xvalidate"
 	"testing"
 )
 

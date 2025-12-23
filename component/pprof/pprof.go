@@ -2,10 +2,10 @@ package pprof
 
 import (
 	"fmt"
-	"github.com/dawnsgo/dawn/v2/component"
-	"github.com/dawnsgo/dawn/v2/core/info"
-	xnet "github.com/dawnsgo/dawn/v2/core/net"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/component"
+	"github.com/dawnsgo/dawn/core/info"
+	xnet "github.com/dawnsgo/dawn/core/net"
+	"github.com/dawnsgo/dawn/log"
 	"net/http"
 	_ "net/http/pprof"
 )

@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/encoding/json"
-	"github.com/dawnsgo/dawn/v2/registry"
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
+	"github.com/dawnsgo/dawn/encoding/json"
+	"github.com/dawnsgo/dawn/registry"
+	"github.com/dawnsgo/dawn/utils/xconv"
 	"github.com/hashicorp/consul/api"
 )
 

@@ -2,11 +2,11 @@ package client
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/crypto"
-	"github.com/dawnsgo/dawn/v2/encoding"
-	"github.com/dawnsgo/dawn/v2/etc"
-	"github.com/dawnsgo/dawn/v2/network"
-	"github.com/dawnsgo/dawn/v2/utils/xuuid"
+	"github.com/dawnsgo/dawn/crypto"
+	"github.com/dawnsgo/dawn/encoding"
+	"github.com/dawnsgo/dawn/etc"
+	"github.com/dawnsgo/dawn/network"
+	"github.com/dawnsgo/dawn/utils/xuuid"
 	"time"
 )
 

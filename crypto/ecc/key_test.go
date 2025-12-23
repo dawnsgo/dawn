@@ -2,7 +2,7 @@ package ecc_test
 
 import (
 	"fmt"
-	"github.com/dawnsgo/dawn/crypto/ecc/v2"
+	"github.com/dawnsgo/dawn/crypto/ecc"
 	"testing"
 )
 

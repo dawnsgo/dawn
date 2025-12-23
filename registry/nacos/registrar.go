@@ -6,10 +6,10 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/dawnsgo/dawn/v2/encoding/json"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/registry"
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
+	"github.com/dawnsgo/dawn/encoding/json"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/registry"
+	"github.com/dawnsgo/dawn/utils/xconv"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 )
 

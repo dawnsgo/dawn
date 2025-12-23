@@ -2,7 +2,7 @@ package chains_test
 
 import (
 	"fmt"
-	"github.com/dawnsgo/dawn/v2/core/chains"
+	"github.com/dawnsgo/dawn/core/chains"
 	"testing"
 )
 

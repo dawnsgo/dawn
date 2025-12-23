@@ -6,7 +6,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/log"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/adaptor"

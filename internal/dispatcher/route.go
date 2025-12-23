@@ -4,10 +4,10 @@ import (
 	"math/rand/v2"
 	"sync/atomic"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/core/endpoint"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/registry"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/core/endpoint"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/registry"
 )
 
 type Route struct {

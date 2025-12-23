@@ -2,7 +2,7 @@ package limiter_test
 
 import (
 	"fmt"
-	"github.com/dawnsgo/dawn/v2/core/limiter"
+	"github.com/dawnsgo/dawn/core/limiter"
 	"testing"
 )
 

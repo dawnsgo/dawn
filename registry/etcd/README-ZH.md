@@ -13,7 +13,7 @@
 1.安装
 
 ```shell
-go get github.com/dawnsgo/dawn/registry/etcd/v2@latest
+go get github.com/dawnsgo/dawn/registry/etcd@latest
 ```
 
 2.etc配置项
@@ -42,11 +42,11 @@ package main
 
 import (
     "context"
-    "github.com/dawnsgo/dawn/registry/etcd/v2"
-    "github.com/dawnsgo/dawn/v2/cluster"
-    "github.com/dawnsgo/dawn/v2/log"
-    "github.com/dawnsgo/dawn/v2/registry"
-    "github.com/dawnsgo/dawn/v2/utils/xuuid"
+    "github.com/dawnsgo/dawn/registry/etcd"
+    "github.com/dawnsgo/dawn/cluster"
+    "github.com/dawnsgo/dawn/log"
+    "github.com/dawnsgo/dawn/registry"
+    "github.com/dawnsgo/dawn/utils/xuuid"
     "time"
 )
 

@@ -4,8 +4,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/network"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/network"
 )
 
 const (

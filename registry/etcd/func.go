@@ -2,7 +2,7 @@ package etcd
 
 import (
 	"fmt"
-	"github.com/dawnsgo/dawn/v2/registry"
+	"github.com/dawnsgo/dawn/registry"
 )
 
 // 构建实例ID

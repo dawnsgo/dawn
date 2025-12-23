@@ -3,11 +3,11 @@ package gate
 import (
 	"context"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/session"
-	"github.com/dawnsgo/dawn/v2/utils/xcall"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/session"
+	"github.com/dawnsgo/dawn/utils/xcall"
 )
 
 type provider struct {

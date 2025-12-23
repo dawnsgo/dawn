@@ -1,10 +1,10 @@
-module github.com/dawnsgo/dawn/lock/memcache/v2
+module github.com/dawnsgo/dawn/lock/memcache
 
 go 1.23.0
 
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20250403215159-8d39553ac7cf
-	github.com/dawnsgo/dawn/v2 v2.4.2
+	github.com/dawnsgo/dawn v1.0.1
 )
 
 require (
@@ -25,4 +25,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/dawnsgo/dawn/v2 => ../../
+replace github.com/dawnsgo/dawn => ../../

@@ -1,7 +1,7 @@
 package xhash_test
 
 import (
-	"github.com/dawnsgo/dawn/v2/utils/xhash"
+	"github.com/dawnsgo/dawn/utils/xhash"
 	"testing"
 )
 

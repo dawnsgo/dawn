@@ -1,9 +1,9 @@
-module github.com/dawnsgo/dawn/registry/consul/v2
+module github.com/dawnsgo/dawn/registry/consul
 
 go 1.23.0
 
 require (
-	github.com/dawnsgo/dawn/v2 v2.4.2
+	github.com/dawnsgo/dawn v1.0.1
 	github.com/hashicorp/consul/api v1.32.0
 )
 
@@ -39,4 +39,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/dawnsgo/dawn/v2 => ../../
+replace github.com/dawnsgo/dawn => ../../

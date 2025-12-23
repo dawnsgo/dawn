@@ -1,4 +1,4 @@
-module github.com/dawnsgo/dawn/v2
+module github.com/dawnsgo/dawn
 
 go 1.23.0
 

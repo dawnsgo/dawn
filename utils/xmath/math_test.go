@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/utils/xmath"
+	"github.com/dawnsgo/dawn/utils/xmath"
 )
 
 func TestFloor(t *testing.T) {

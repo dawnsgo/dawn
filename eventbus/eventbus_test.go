@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/eventbus"
-	"github.com/dawnsgo/dawn/v2/eventbus/process"
+	"github.com/dawnsgo/dawn/eventbus"
+	"github.com/dawnsgo/dawn/eventbus/process"
 )
 
 const (

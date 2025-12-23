@@ -5,8 +5,8 @@ import (
 	"math/cmplx"
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
-	"github.com/dawnsgo/dawn/v2/utils/xtime"
+	"github.com/dawnsgo/dawn/utils/xconv"
+	"github.com/dawnsgo/dawn/utils/xtime"
 )
 
 func TestInt64(t *testing.T) {

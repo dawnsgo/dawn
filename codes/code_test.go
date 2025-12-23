@@ -2,7 +2,7 @@ package codes_test
 
 import (
 	"errors"
-	"github.com/dawnsgo/dawn/v2/codes"
+	"github.com/dawnsgo/dawn/codes"
 	"testing"
 )
 

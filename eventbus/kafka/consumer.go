@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/dawnsgo/dawn/v2/eventbus"
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/task"
+	"github.com/dawnsgo/dawn/eventbus"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/task"
 )
 
 type consumer struct {

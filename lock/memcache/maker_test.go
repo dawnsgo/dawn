@@ -2,7 +2,7 @@ package memcache_test
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/lock/memcache/v2"
+	"github.com/dawnsgo/dawn/lock/memcache"
 	"sync"
 	"testing"
 	"time"

@@ -7,7 +7,7 @@
 
 package network
 
-import "github.com/dawnsgo/dawn/v2/core/buffer"
+import "github.com/dawnsgo/dawn/core/buffer"
 
 type (
 	StartHandler      func()

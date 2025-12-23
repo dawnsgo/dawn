@@ -2,7 +2,7 @@ package xcall
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/log"
 	"runtime"
 	"time"
 )

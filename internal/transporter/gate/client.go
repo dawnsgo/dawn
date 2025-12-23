@@ -4,13 +4,13 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/core/buffer"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/client"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/codes"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/protocol"
-	"github.com/dawnsgo/dawn/v2/session"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/core/buffer"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/client"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/codes"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/protocol"
+	"github.com/dawnsgo/dawn/session"
 )
 
 type Client struct {

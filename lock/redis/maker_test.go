@@ -2,7 +2,7 @@ package redis_test
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/lock/redis/v2"
+	"github.com/dawnsgo/dawn/lock/redis"
 	"sync"
 	"testing"
 	"time"

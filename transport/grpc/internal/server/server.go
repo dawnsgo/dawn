@@ -3,9 +3,9 @@ package server
 import (
 	"net"
 
-	"github.com/dawnsgo/dawn/v2/core/endpoint"
-	xnet "github.com/dawnsgo/dawn/v2/core/net"
-	"github.com/dawnsgo/dawn/v2/errors"
+	"github.com/dawnsgo/dawn/core/endpoint"
+	xnet "github.com/dawnsgo/dawn/core/net"
+	"github.com/dawnsgo/dawn/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )

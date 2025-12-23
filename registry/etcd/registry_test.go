@@ -10,10 +10,10 @@ package etcd_test
 import (
 	"context"
 	"fmt"
-	"github.com/dawnsgo/dawn/registry/etcd/v2"
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/core/net"
-	"github.com/dawnsgo/dawn/v2/registry"
+	"github.com/dawnsgo/dawn/registry/etcd"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/core/net"
+	"github.com/dawnsgo/dawn/registry"
 	"testing"
 	"time"
 )

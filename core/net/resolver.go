@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/errors"
+	"github.com/dawnsgo/dawn/errors"
 )
 
 var urls = []string{

@@ -1,7 +1,7 @@
 package kcp
 
 import (
-	"github.com/dawnsgo/dawn/v2/network"
+	"github.com/dawnsgo/dawn/network"
 	"github.com/xtaci/kcp-go/v5"
 	"sync/atomic"
 )

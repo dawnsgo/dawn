@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/transport"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/transport"
 )
 
 type Context interface {

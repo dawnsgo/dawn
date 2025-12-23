@@ -3,7 +3,7 @@ package cache
 import (
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/core/value"
+	"github.com/dawnsgo/dawn/core/value"
 )
 
 type Result interface {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
-	"github.com/dawnsgo/dawn/v2/utils/xrand"
+	"github.com/dawnsgo/dawn/utils/xconv"
+	"github.com/dawnsgo/dawn/utils/xrand"
 )
 
 func Test_Str(t *testing.T) {

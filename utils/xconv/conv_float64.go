@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/utils/xreflect"
+	"github.com/dawnsgo/dawn/utils/xreflect"
 )
 
 func Float64(val any) float64 {

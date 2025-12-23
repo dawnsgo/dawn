@@ -1,7 +1,7 @@
 package protocol_test
 
 import (
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/protocol"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/protocol"
 	"testing"
 )
 

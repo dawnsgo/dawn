@@ -1,6 +1,6 @@
 package client
 
-import "github.com/dawnsgo/dawn/v2/cluster"
+import "github.com/dawnsgo/dawn/cluster"
 
 type Options struct {
 	Addr         string       // 连接地址

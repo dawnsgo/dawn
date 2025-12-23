@@ -1,8 +1,8 @@
 package task
 
 import (
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/utils/xcall"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/utils/xcall"
 	"github.com/panjf2000/ants/v2"
 )
 

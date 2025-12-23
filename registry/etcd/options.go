@@ -9,7 +9,7 @@ package etcd
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/etc"
+	"github.com/dawnsgo/dawn/etc"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"time"
 )

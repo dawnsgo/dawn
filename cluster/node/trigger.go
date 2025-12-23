@@ -2,9 +2,9 @@ package node
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/utils/xcall"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/utils/xcall"
 )
 
 type EventHandler func(ctx Context)

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/core/buffer"
-	"github.com/dawnsgo/dawn/v2/utils/xrand"
+	"github.com/dawnsgo/dawn/core/buffer"
+	"github.com/dawnsgo/dawn/utils/xrand"
 )
 
 type User struct {

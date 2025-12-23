@@ -7,12 +7,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/core/tls"
-	"github.com/dawnsgo/dawn/v2/encoding/json"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/locate"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/core/tls"
+	"github.com/dawnsgo/dawn/encoding/json"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/locate"
+	"github.com/dawnsgo/dawn/log"
 	"github.com/go-redis/redis/v8"
 	"golang.org/x/sync/singleflight"
 )

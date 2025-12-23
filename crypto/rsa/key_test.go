@@ -2,7 +2,7 @@ package rsa_test
 
 import (
 	"fmt"
-	"github.com/dawnsgo/dawn/crypto/rsa/v2"
+	"github.com/dawnsgo/dawn/crypto/rsa"
 	"testing"
 )
 

@@ -3,9 +3,9 @@ package protocol_test
 import (
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/core/buffer"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/protocol"
-	"github.com/dawnsgo/dawn/v2/packet"
+	"github.com/dawnsgo/dawn/core/buffer"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/protocol"
+	"github.com/dawnsgo/dawn/packet"
 )
 
 func TestEncodePublishReq(t *testing.T) {

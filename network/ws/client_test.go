@@ -15,10 +15,10 @@ import (
 	"time"
 
 	"github.com/dawnsgo/dawn/network/ws/v2"
-	"github.com/dawnsgo/dawn/v2/core/buffer"
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/network"
-	"github.com/dawnsgo/dawn/v2/packet"
+	"github.com/dawnsgo/dawn/core/buffer"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/network"
+	"github.com/dawnsgo/dawn/packet"
 )
 
 func TestClient_Dial(t *testing.T) {

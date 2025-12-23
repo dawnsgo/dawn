@@ -3,9 +3,9 @@ package redis_test
 import (
 	"context"
 	"fmt"
-	"github.com/dawnsgo/dawn/locate/redis/v2"
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/utils/xuuid"
+	"github.com/dawnsgo/dawn/eventbus/redis"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/utils/xuuid"
 	"testing"
 	"time"
 )

@@ -31,9 +31,9 @@ package main
 
 import (
     "context"
-    "github.com/dawnsgo/dawn/v2/config"
-    "github.com/dawnsgo/dawn/v2/config/file"
-    "github.com/dawnsgo/dawn/v2/log"
+    "github.com/dawnsgo/dawn/config"
+    "github.com/dawnsgo/dawn/config/file"
+    "github.com/dawnsgo/dawn/log"
     "time"
 )
 

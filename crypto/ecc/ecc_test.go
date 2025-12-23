@@ -1,9 +1,9 @@
 package ecc_test
 
 import (
-	"github.com/dawnsgo/dawn/crypto/ecc/v2"
-	"github.com/dawnsgo/dawn/v2/core/hash"
-	"github.com/dawnsgo/dawn/v2/utils/xrand"
+	"github.com/dawnsgo/dawn/crypto/ecc"
+	"github.com/dawnsgo/dawn/core/hash"
+	"github.com/dawnsgo/dawn/utils/xrand"
 	"testing"
 )
 

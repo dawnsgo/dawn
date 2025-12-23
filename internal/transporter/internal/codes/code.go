@@ -1,7 +1,7 @@
 package codes
 
 import (
-	"github.com/dawnsgo/dawn/v2/errors"
+	"github.com/dawnsgo/dawn/errors"
 )
 
 const (

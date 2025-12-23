@@ -1,8 +1,8 @@
 package client
 
 import (
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/network"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/network"
 )
 
 type Proxy struct {

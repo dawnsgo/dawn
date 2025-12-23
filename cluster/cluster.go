@@ -1,7 +1,7 @@
 package cluster
 
 import (
-	"github.com/dawnsgo/dawn/v2/session"
+	"github.com/dawnsgo/dawn/session"
 )
 
 const (

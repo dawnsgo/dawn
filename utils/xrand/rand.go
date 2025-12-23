@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/log"
 )
 
 const (

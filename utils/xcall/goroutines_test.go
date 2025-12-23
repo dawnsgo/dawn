@@ -2,7 +2,7 @@ package xcall_test
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/utils/xcall"
+	"github.com/dawnsgo/dawn/utils/xcall"
 	"testing"
 	"time"
 )

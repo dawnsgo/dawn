@@ -3,7 +3,7 @@ package pool_test
 import (
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/core/pool"
+	"github.com/dawnsgo/dawn/core/pool"
 )
 
 func TestFactory_Get(t *testing.T) {

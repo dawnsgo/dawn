@@ -3,12 +3,12 @@ package node
 import (
 	"context"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/codes"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/protocol"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/route"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/server"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/codes"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/protocol"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/route"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/server"
 )
 
 type Server struct {

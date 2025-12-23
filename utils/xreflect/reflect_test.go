@@ -1,7 +1,7 @@
 package xreflect_test
 
 import (
-	"github.com/dawnsgo/dawn/v2/utils/xreflect"
+	"github.com/dawnsgo/dawn/utils/xreflect"
 	"testing"
 )
 

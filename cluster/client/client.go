@@ -6,15 +6,15 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/component"
-	"github.com/dawnsgo/dawn/v2/core/buffer"
-	"github.com/dawnsgo/dawn/v2/core/info"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/network"
-	"github.com/dawnsgo/dawn/v2/packet"
-	"github.com/dawnsgo/dawn/v2/utils/xcall"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/component"
+	"github.com/dawnsgo/dawn/core/buffer"
+	"github.com/dawnsgo/dawn/core/info"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/network"
+	"github.com/dawnsgo/dawn/packet"
+	"github.com/dawnsgo/dawn/utils/xcall"
 )
 
 type HookHandler func(proxy *Proxy)

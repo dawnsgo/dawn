@@ -2,7 +2,7 @@ package nacos
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/config"
+	"github.com/dawnsgo/dawn/config"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 )
 

@@ -1,9 +1,9 @@
 package http
 
 import (
-	"github.com/dawnsgo/dawn/v2/etc"
-	"github.com/dawnsgo/dawn/v2/registry"
-	"github.com/dawnsgo/dawn/v2/transport"
+	"github.com/dawnsgo/dawn/etc"
+	"github.com/dawnsgo/dawn/registry"
+	"github.com/dawnsgo/dawn/transport"
 )
 
 const (

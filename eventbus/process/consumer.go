@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/dawnsgo/dawn/v2/eventbus/internal"
-	"github.com/dawnsgo/dawn/v2/task"
+	"github.com/dawnsgo/dawn/eventbus/internal"
+	"github.com/dawnsgo/dawn/task"
 )
 
 type consumer struct {

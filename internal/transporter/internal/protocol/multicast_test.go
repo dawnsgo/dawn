@@ -1,11 +1,11 @@
 package protocol_test
 
 import (
-	"github.com/dawnsgo/dawn/v2/core/buffer"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/codes"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/protocol"
-	"github.com/dawnsgo/dawn/v2/packet"
-	"github.com/dawnsgo/dawn/v2/session"
+	"github.com/dawnsgo/dawn/core/buffer"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/codes"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/protocol"
+	"github.com/dawnsgo/dawn/packet"
+	"github.com/dawnsgo/dawn/session"
 	"testing"
 )
 

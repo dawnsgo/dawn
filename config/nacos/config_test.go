@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dawnsgo/dawn/config/nacos/v2"
-	"github.com/dawnsgo/dawn/v2/config"
+	"github.com/dawnsgo/dawn/config/nacos"
+	"github.com/dawnsgo/dawn/config"
 )
 
 func init() {

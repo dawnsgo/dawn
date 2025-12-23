@@ -3,10 +3,10 @@ package gate
 import (
 	"context"
 
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/codes"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/protocol"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/route"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/server"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/codes"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/protocol"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/route"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/server"
 )
 
 type Server struct {

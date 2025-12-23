@@ -5,10 +5,10 @@ import (
 	"math"
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/core/endpoint"
-	"github.com/dawnsgo/dawn/v2/internal/dispatcher"
-	"github.com/dawnsgo/dawn/v2/registry"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/core/endpoint"
+	"github.com/dawnsgo/dawn/internal/dispatcher"
+	"github.com/dawnsgo/dawn/registry"
 )
 
 func TestDispatcher_ReplaceServices(t *testing.T) {

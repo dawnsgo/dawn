@@ -2,7 +2,7 @@ package buffer
 
 import (
 	"encoding/binary"
-	"github.com/dawnsgo/dawn/v2/errors"
+	"github.com/dawnsgo/dawn/errors"
 	"io"
 	"math"
 )

@@ -4,10 +4,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/client"
-	"github.com/dawnsgo/dawn/v2/utils/xtime"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/client"
+	"github.com/dawnsgo/dawn/utils/xtime"
 	"golang.org/x/sync/singleflight"
 )
 

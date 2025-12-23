@@ -1,6 +1,6 @@
 package chains
 
-import "github.com/dawnsgo/dawn/v2/utils/xcall"
+import "github.com/dawnsgo/dawn/utils/xcall"
 
 type Chain struct {
 	head *node

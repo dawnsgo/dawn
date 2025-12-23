@@ -2,7 +2,7 @@ package nacos
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/etc"
+	"github.com/dawnsgo/dawn/etc"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
 	"time"
 )

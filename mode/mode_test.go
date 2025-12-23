@@ -4,7 +4,7 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/mode"
+	"github.com/dawnsgo/dawn/mode"
 )
 
 func TestGetMode(t *testing.T) {

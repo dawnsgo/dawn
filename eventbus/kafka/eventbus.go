@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/IBM/sarama"
-	"github.com/dawnsgo/dawn/v2/eventbus"
+	"github.com/dawnsgo/dawn/eventbus"
 )
 
 type Eventbus struct {

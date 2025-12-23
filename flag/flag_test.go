@@ -1,7 +1,7 @@
 package flag_test
 
 import (
-	"github.com/dawnsgo/dawn/v2/flag"
+	"github.com/dawnsgo/dawn/flag"
 	"testing"
 )
 

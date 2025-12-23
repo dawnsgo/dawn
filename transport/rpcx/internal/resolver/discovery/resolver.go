@@ -1,7 +1,7 @@
 package discovery
 
 import (
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/log"
 	cli "github.com/smallnest/rpcx/client"
 	"sync"
 	"time"

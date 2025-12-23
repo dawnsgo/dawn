@@ -3,9 +3,9 @@ package server
 import (
 	"crypto/tls"
 
-	"github.com/dawnsgo/dawn/v2/core/endpoint"
-	"github.com/dawnsgo/dawn/v2/core/net"
-	"github.com/dawnsgo/dawn/v2/errors"
+	"github.com/dawnsgo/dawn/core/endpoint"
+	"github.com/dawnsgo/dawn/core/net"
+	"github.com/dawnsgo/dawn/errors"
 	"github.com/smallnest/rpcx/server"
 )
 

@@ -3,10 +3,10 @@ package client
 import (
 	"net"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/core/value"
-	"github.com/dawnsgo/dawn/v2/network"
-	"github.com/dawnsgo/dawn/v2/packet"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/core/value"
+	"github.com/dawnsgo/dawn/network"
+	"github.com/dawnsgo/dawn/packet"
 )
 
 type Conn struct {

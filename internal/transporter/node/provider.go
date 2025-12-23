@@ -2,7 +2,7 @@ package node
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/cluster"
+	"github.com/dawnsgo/dawn/cluster"
 )
 
 type Provider interface {

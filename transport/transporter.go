@@ -3,8 +3,8 @@ package transport
 import (
 	"context"
 
-	"github.com/dawnsgo/dawn/v2/core/endpoint"
-	"github.com/dawnsgo/dawn/v2/registry"
+	"github.com/dawnsgo/dawn/core/endpoint"
+	"github.com/dawnsgo/dawn/registry"
 )
 
 type Server interface {

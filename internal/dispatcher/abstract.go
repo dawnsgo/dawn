@@ -1,8 +1,8 @@
 package dispatcher
 
 import (
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/core/endpoint"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/core/endpoint"
 )
 
 type serviceEndpoint struct {

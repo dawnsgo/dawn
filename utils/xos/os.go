@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/dawnsgo/dawn/v2/core/stat"
+	"github.com/dawnsgo/dawn/core/stat"
 )
 
 // Stat 获取文件信息

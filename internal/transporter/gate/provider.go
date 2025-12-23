@@ -3,8 +3,8 @@ package gate
 import (
 	"context"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/session"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/session"
 )
 
 type Provider interface {

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dawnsgo/dawn/eventbus/kafka/v2"
-	"github.com/dawnsgo/dawn/v2/eventbus"
+	"github.com/dawnsgo/dawn/eventbus/kafka"
+	"github.com/dawnsgo/dawn/eventbus"
 )
 
 const (

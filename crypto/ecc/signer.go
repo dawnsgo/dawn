@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"math/big"
 
-	"github.com/dawnsgo/dawn/v2/errors"
+	"github.com/dawnsgo/dawn/errors"
 )
 
 type Signer struct {

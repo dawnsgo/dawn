@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/server"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/node"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/server"
+	"github.com/dawnsgo/dawn/internal/transporter/node"
+	"github.com/dawnsgo/dawn/log"
 )
 
 func TestServer(t *testing.T) {

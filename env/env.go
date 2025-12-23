@@ -3,7 +3,7 @@ package env
 import (
 	"os"
 
-	"github.com/dawnsgo/dawn/v2/core/value"
+	"github.com/dawnsgo/dawn/core/value"
 )
 
 // Get 获取环境变量值

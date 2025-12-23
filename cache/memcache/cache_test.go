@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dawnsgo/dawn/cache/memcache/v2"
+	"github.com/dawnsgo/dawn/cache/memcache"
 )
 
 var cache = memcache.NewCache(

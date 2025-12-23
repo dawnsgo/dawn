@@ -8,8 +8,8 @@
 package etcd
 
 import (
-	"github.com/dawnsgo/dawn/v2/config"
-	"github.com/dawnsgo/dawn/v2/etc"
+	"github.com/dawnsgo/dawn/config"
+	"github.com/dawnsgo/dawn/etc"
 	"go.etcd.io/etcd/client/v3"
 	"time"
 )

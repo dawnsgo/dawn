@@ -1,9 +1,9 @@
-module github.com/dawnsgo/dawn/network/kcp/v2
+module github.com/dawnsgo/dawn/network/kcp
 
 go 1.23.0
 
 require (
-	github.com/dawnsgo/dawn/v2 v2.4.2
+	github.com/dawnsgo/dawn v1.0.1
 	github.com/xtaci/kcp-go/v5 v5.6.20
 )
 
@@ -32,4 +32,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/dawnsgo/dawn/v2 => ../../
+replace github.com/dawnsgo/dawn => ../../

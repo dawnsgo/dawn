@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/dawnsgo/dawn/v2/packet"
+	"github.com/dawnsgo/dawn/packet"
 )
 
 type Context struct {

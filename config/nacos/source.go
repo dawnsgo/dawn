@@ -2,9 +2,9 @@ package nacos
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/config"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/config"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/log"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"

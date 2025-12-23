@@ -1,6 +1,6 @@
 package console
 
-import "github.com/dawnsgo/dawn/v2/log/internal"
+import "github.com/dawnsgo/dawn/log/internal"
 
 // Format 日志输出格式
 type Format = internal.Format

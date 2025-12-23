@@ -1,7 +1,7 @@
 package tencent
 
 import (
-	"github.com/dawnsgo/dawn/v2/etc"
+	"github.com/dawnsgo/dawn/etc"
 )
 
 const (

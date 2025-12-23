@@ -5,7 +5,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
+	"github.com/dawnsgo/dawn/utils/xconv"
 )
 
 func TestStringToBytes(t *testing.T) {

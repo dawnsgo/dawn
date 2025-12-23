@@ -1,8 +1,8 @@
 package ecc
 
 import (
-	"github.com/dawnsgo/dawn/v2/etc"
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
+	"github.com/dawnsgo/dawn/etc"
+	"github.com/dawnsgo/dawn/utils/xconv"
 )
 
 const (

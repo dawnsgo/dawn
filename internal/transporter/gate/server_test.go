@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/gate"
-	"github.com/dawnsgo/dawn/v2/session"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/internal/transporter/gate"
+	"github.com/dawnsgo/dawn/session"
 )
 
 func TestServer(t *testing.T) {

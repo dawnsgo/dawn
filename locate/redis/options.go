@@ -3,7 +3,7 @@ package redis
 import (
 	"context"
 
-	"github.com/dawnsgo/dawn/v2/etc"
+	"github.com/dawnsgo/dawn/etc"
 	"github.com/go-redis/redis/v8"
 )
 

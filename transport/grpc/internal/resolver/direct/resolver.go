@@ -1,8 +1,8 @@
 package direct
 
 import (
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/log"
 	"google.golang.org/grpc/balancer"
 	"google.golang.org/grpc/resolver"
 )

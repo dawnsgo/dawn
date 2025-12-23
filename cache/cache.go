@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/log"
 )
 
 var globalCache Cache

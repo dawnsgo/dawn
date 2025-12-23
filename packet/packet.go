@@ -3,7 +3,7 @@ package packet
 import (
 	"io"
 
-	"github.com/dawnsgo/dawn/v2/core/buffer"
+	"github.com/dawnsgo/dawn/core/buffer"
 )
 
 var globalPacker Packer

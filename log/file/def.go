@@ -1,6 +1,6 @@
 package file
 
-import "github.com/dawnsgo/dawn/v2/log/internal"
+import "github.com/dawnsgo/dawn/log/internal"
 
 // 日志翻转规则
 type Rotate string

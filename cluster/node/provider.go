@@ -2,9 +2,9 @@ package node
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/packet"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/packet"
 )
 
 type provider struct {

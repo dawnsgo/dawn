@@ -5,8 +5,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/utils/xcall"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/utils/xcall"
 )
 
 type Creator func(actor *Actor, args ...any) Processor

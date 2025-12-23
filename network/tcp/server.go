@@ -5,8 +5,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/network"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/network"
 )
 
 type server struct {

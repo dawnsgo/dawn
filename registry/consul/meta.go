@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dawnsgo/dawn/v2/registry"
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
+	"github.com/dawnsgo/dawn/registry"
+	"github.com/dawnsgo/dawn/utils/xconv"
 )
 
 const metaValueSize = 512

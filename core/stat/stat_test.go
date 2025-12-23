@@ -3,7 +3,7 @@ package stat_test
 import (
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/core/stat"
+	"github.com/dawnsgo/dawn/core/stat"
 )
 
 func TestStat(t *testing.T) {

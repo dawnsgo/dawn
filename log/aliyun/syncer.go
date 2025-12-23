@@ -8,7 +8,7 @@ import (
 
 	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/aliyun/aliyun-log-go-sdk/producer"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/log"
 )
 
 const (

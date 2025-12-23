@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/log/internal"
+	"github.com/dawnsgo/dawn/log/internal"
 )
 
 func TestString(t *testing.T) {

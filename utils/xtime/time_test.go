@@ -1,7 +1,7 @@
 package xtime_test
 
 import (
-	"github.com/dawnsgo/dawn/v2/utils/xtime"
+	"github.com/dawnsgo/dawn/utils/xtime"
 	"testing"
 )
 

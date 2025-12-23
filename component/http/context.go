@@ -2,7 +2,7 @@ package http
 
 import (
 	"bytes"
-	"github.com/dawnsgo/dawn/v2/codes"
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/gofiber/fiber/v3"
 	"io"
 	"net/http"

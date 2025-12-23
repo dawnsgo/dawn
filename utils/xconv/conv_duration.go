@@ -9,7 +9,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/dawnsgo/dawn/v2/utils/xreflect"
+	"github.com/dawnsgo/dawn/utils/xreflect"
 )
 
 func Duration(val any) time.Duration {

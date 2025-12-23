@@ -3,7 +3,7 @@ package rsa
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"github.com/dawnsgo/dawn/v2/errors"
+	"github.com/dawnsgo/dawn/errors"
 	"math"
 )
 

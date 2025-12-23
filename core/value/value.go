@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/encoding/json"
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
-	"github.com/dawnsgo/dawn/v2/utils/xreflect"
+	"github.com/dawnsgo/dawn/encoding/json"
+	"github.com/dawnsgo/dawn/utils/xconv"
+	"github.com/dawnsgo/dawn/utils/xreflect"
 )
 
 type Value interface {

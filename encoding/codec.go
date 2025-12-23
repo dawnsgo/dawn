@@ -8,13 +8,13 @@
 package encoding
 
 import (
-	"github.com/dawnsgo/dawn/v2/encoding/json"
-	"github.com/dawnsgo/dawn/v2/encoding/msgpack"
-	"github.com/dawnsgo/dawn/v2/encoding/proto"
-	"github.com/dawnsgo/dawn/v2/encoding/toml"
-	"github.com/dawnsgo/dawn/v2/encoding/xml"
-	"github.com/dawnsgo/dawn/v2/encoding/yaml"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/encoding/json"
+	"github.com/dawnsgo/dawn/encoding/msgpack"
+	"github.com/dawnsgo/dawn/encoding/proto"
+	"github.com/dawnsgo/dawn/encoding/toml"
+	"github.com/dawnsgo/dawn/encoding/xml"
+	"github.com/dawnsgo/dawn/encoding/yaml"
+	"github.com/dawnsgo/dawn/log"
 )
 
 var codecs = make(map[string]Codec)

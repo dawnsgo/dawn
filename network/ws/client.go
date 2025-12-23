@@ -1,7 +1,7 @@
 package ws
 
 import (
-	"github.com/dawnsgo/dawn/v2/network"
+	"github.com/dawnsgo/dawn/network"
 	"github.com/gorilla/websocket"
 	"sync/atomic"
 )

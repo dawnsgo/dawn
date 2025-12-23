@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/dawnsgo/dawn/v2/core/value"
+	"github.com/dawnsgo/dawn/core/value"
 )
 
 type Matcher interface {

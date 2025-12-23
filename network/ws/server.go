@@ -8,9 +8,9 @@
 package ws
 
 import (
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/network"
-	"github.com/dawnsgo/dawn/v2/utils/xcall"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/network"
+	"github.com/dawnsgo/dawn/utils/xcall"
 	"github.com/gorilla/websocket"
 	"net"
 	"net/http"

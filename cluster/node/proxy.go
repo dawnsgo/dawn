@@ -4,13 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/internal/link"
-	"github.com/dawnsgo/dawn/v2/registry"
-	"github.com/dawnsgo/dawn/v2/session"
-	"github.com/dawnsgo/dawn/v2/transport"
-	"github.com/dawnsgo/dawn/v2/utils/xcall"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/internal/link"
+	"github.com/dawnsgo/dawn/registry"
+	"github.com/dawnsgo/dawn/session"
+	"github.com/dawnsgo/dawn/transport"
+	"github.com/dawnsgo/dawn/utils/xcall"
 )
 
 type Proxy struct {

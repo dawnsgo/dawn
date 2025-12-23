@@ -1,10 +1,10 @@
-module github.com/dawnsgo/dawn/log/aliyun/v2
+module github.com/dawnsgo/dawn/log/aliyun
 
 go 1.23.0
 
 require (
 	github.com/aliyun/aliyun-log-go-sdk v0.1.100
-	github.com/dawnsgo/dawn/v2 v2.4.2
+	github.com/dawnsgo/dawn v1.0.1
 )
 
 require (
@@ -37,4 +37,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/dawnsgo/dawn/v2 => ../../
+replace github.com/dawnsgo/dawn => ../../

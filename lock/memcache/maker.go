@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/lock"
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
-	"github.com/dawnsgo/dawn/v2/utils/xtime"
-	"github.com/dawnsgo/dawn/v2/utils/xuuid"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/lock"
+	"github.com/dawnsgo/dawn/utils/xconv"
+	"github.com/dawnsgo/dawn/utils/xtime"
+	"github.com/dawnsgo/dawn/utils/xuuid"
 )
 
 type Maker struct {

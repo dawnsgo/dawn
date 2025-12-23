@@ -4,11 +4,11 @@ import (
 	"context"
 	"strings"
 
-	"github.com/dawnsgo/dawn/v2/encoding/json"
-	"github.com/dawnsgo/dawn/v2/encoding/toml"
-	"github.com/dawnsgo/dawn/v2/encoding/xml"
-	"github.com/dawnsgo/dawn/v2/encoding/yaml"
-	"github.com/dawnsgo/dawn/v2/errors"
+	"github.com/dawnsgo/dawn/encoding/json"
+	"github.com/dawnsgo/dawn/encoding/toml"
+	"github.com/dawnsgo/dawn/encoding/xml"
+	"github.com/dawnsgo/dawn/encoding/yaml"
+	"github.com/dawnsgo/dawn/errors"
 )
 
 type Option func(o *options)

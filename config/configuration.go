@@ -1,6 +1,6 @@
 package config
 
-import "github.com/dawnsgo/dawn/v2/errors"
+import "github.com/dawnsgo/dawn/errors"
 
 // Configuration 配置项
 type Configuration struct {

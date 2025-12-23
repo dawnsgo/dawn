@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/etc"
+	"github.com/dawnsgo/dawn/etc"
 )
 
 const (

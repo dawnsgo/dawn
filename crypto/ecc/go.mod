@@ -1,9 +1,9 @@
-module github.com/dawnsgo/dawn/crypto/ecc/v2
+module github.com/dawnsgo/dawn/crypto/ecc
 
 go 1.23.0
 
 require (
-	github.com/dawnsgo/dawn/v2 v2.4.2
+	github.com/dawnsgo/dawn v1.0.1
 	github.com/ethereum/go-ethereum v1.12.0
 )
 
@@ -28,4 +28,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/dawnsgo/dawn/v2 => ../../
+replace github.com/dawnsgo/dawn => ../../

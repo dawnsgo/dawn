@@ -5,8 +5,8 @@ import (
 	"encoding/binary"
 	"reflect"
 
-	"github.com/dawnsgo/dawn/v2/encoding/json"
-	"github.com/dawnsgo/dawn/v2/utils/xreflect"
+	"github.com/dawnsgo/dawn/encoding/json"
+	"github.com/dawnsgo/dawn/utils/xreflect"
 )
 
 func Byte(val any) byte {

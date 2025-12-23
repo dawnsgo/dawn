@@ -6,8 +6,8 @@ import (
 	"syscall"
 	"unicode/utf8"
 
-	"github.com/dawnsgo/dawn/v2/mode"
-	"github.com/dawnsgo/dawn/v2/utils/xtime"
+	"github.com/dawnsgo/dawn/mode"
+	"github.com/dawnsgo/dawn/utils/xtime"
 )
 
 const logo = `
@@ -26,8 +26,8 @@ const (
 	rightTopBorder    = "┐"
 	leftBottomBorder  = "└"
 	rightBottomBorder = "┘"
-	website           = "https://github.com/dobyte/dawn"
-	version           = "v2.4.2"
+	website           = "https://github.com/orgs/dawnsgo/dawn"
+	version           = "v1.0.1"
 	global            = "Global"
 )
 

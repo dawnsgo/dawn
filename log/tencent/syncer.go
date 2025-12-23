@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/log"
 	cls "github.com/tencentcloud/tencentcloud-cls-sdk-go"
 )
 

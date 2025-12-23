@@ -10,8 +10,8 @@ package etcd
 import (
 	"context"
 	"fmt"
-	"github.com/dawnsgo/dawn/v2/encoding/json"
-	"github.com/dawnsgo/dawn/v2/registry"
+	"github.com/dawnsgo/dawn/encoding/json"
+	"github.com/dawnsgo/dawn/registry"
 	"go.etcd.io/etcd/client/v3"
 	"sync"
 )

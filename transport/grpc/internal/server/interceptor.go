@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/log"
 	"google.golang.org/grpc"
 	"runtime"
 )

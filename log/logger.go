@@ -10,11 +10,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/dawnsgo/dawn/v2/core/stack"
-	"github.com/dawnsgo/dawn/v2/log/console"
-	"github.com/dawnsgo/dawn/v2/log/file"
-	"github.com/dawnsgo/dawn/v2/log/internal"
-	"github.com/dawnsgo/dawn/v2/utils/xtime"
+	"github.com/dawnsgo/dawn/core/stack"
+	"github.com/dawnsgo/dawn/log/console"
+	"github.com/dawnsgo/dawn/log/file"
+	"github.com/dawnsgo/dawn/log/internal"
+	"github.com/dawnsgo/dawn/utils/xtime"
 	"golang.org/x/sync/errgroup"
 )
 

@@ -1,10 +1,10 @@
 package grpc
 
 import (
-	"github.com/dawnsgo/dawn/transport/grpc/v2/internal/client"
-	"github.com/dawnsgo/dawn/transport/grpc/v2/internal/server"
-	"github.com/dawnsgo/dawn/v2/etc"
-	"github.com/dawnsgo/dawn/v2/registry"
+	"github.com/dawnsgo/dawn/transport/grpc/internal/client"
+	"github.com/dawnsgo/dawn/transport/grpc/internal/server"
+	"github.com/dawnsgo/dawn/etc"
+	"github.com/dawnsgo/dawn/registry"
 	"google.golang.org/grpc"
 )
 

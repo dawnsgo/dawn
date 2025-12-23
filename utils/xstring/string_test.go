@@ -1,7 +1,7 @@
 package xstring_test
 
 import (
-	"github.com/dawnsgo/dawn/v2/utils/xstring"
+	"github.com/dawnsgo/dawn/utils/xstring"
 	"testing"
 )
 

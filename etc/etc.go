@@ -1,11 +1,11 @@
 package etc
 
 import (
-	"github.com/dawnsgo/dawn/v2/config"
-	"github.com/dawnsgo/dawn/v2/config/file/core"
-	"github.com/dawnsgo/dawn/v2/core/value"
-	"github.com/dawnsgo/dawn/v2/env"
-	"github.com/dawnsgo/dawn/v2/flag"
+	"github.com/dawnsgo/dawn/config"
+	"github.com/dawnsgo/dawn/config/file/core"
+	"github.com/dawnsgo/dawn/core/value"
+	"github.com/dawnsgo/dawn/env"
+	"github.com/dawnsgo/dawn/flag"
 )
 
 // etc主要被当做项目启动配置存在；常用于集群配置、服务组件配置等。

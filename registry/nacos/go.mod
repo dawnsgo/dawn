@@ -1,9 +1,9 @@
-module github.com/dawnsgo/dawn/registry/nacos/v2
+module github.com/dawnsgo/dawn/registry/nacos
 
 go 1.23.0
 
 require (
-	github.com/dawnsgo/dawn/v2 v2.4.2
+	github.com/dawnsgo/dawn v1.0.1
 	github.com/nacos-group/nacos-sdk-go/v2 v2.2.7
 	golang.org/x/sync v0.13.0
 )
@@ -66,4 +66,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/dawnsgo/dawn/v2 => ../../
+replace github.com/dawnsgo/dawn => ../../

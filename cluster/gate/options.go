@@ -12,13 +12,13 @@ import (
 	"maps"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/etc"
-	"github.com/dawnsgo/dawn/v2/locate"
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/network"
-	"github.com/dawnsgo/dawn/v2/registry"
-	"github.com/dawnsgo/dawn/v2/utils/xuuid"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/etc"
+	"github.com/dawnsgo/dawn/locate"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/network"
+	"github.com/dawnsgo/dawn/registry"
+	"github.com/dawnsgo/dawn/utils/xuuid"
 )
 
 const (

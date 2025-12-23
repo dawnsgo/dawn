@@ -3,7 +3,7 @@ package xconv
 import (
 	"reflect"
 
-	"github.com/dawnsgo/dawn/v2/utils/xreflect"
+	"github.com/dawnsgo/dawn/utils/xreflect"
 )
 
 func Int16(val any) int16 {

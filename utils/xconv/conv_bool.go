@@ -6,7 +6,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/dawnsgo/dawn/v2/utils/xreflect"
+	"github.com/dawnsgo/dawn/utils/xreflect"
 )
 
 func Bool(val any) bool {

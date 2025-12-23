@@ -1,10 +1,10 @@
-module github.com/dawnsgo/dawn/eventbus/kafka/v2
+module github.com/dawnsgo/dawn/eventbus/kafka
 
 go 1.23.0
 
 require (
 	github.com/IBM/sarama v1.43.3
-	github.com/dawnsgo/dawn/v2 v2.4.2
+	github.com/dawnsgo/dawn v1.0.1
 )
 
 require (
@@ -46,4 +46,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/dawnsgo/dawn/v2 => ../../
+replace github.com/dawnsgo/dawn => ../../

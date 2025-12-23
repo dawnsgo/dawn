@@ -14,10 +14,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/log/internal"
-	"github.com/dawnsgo/dawn/v2/utils/xos"
-	"github.com/dawnsgo/dawn/v2/utils/xtime"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/log/internal"
+	"github.com/dawnsgo/dawn/utils/xos"
+	"github.com/dawnsgo/dawn/utils/xtime"
 )
 
 const Name = "file"

@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dawnsgo/dawn/registry/consul/v2"
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/registry"
-	"github.com/dawnsgo/dawn/v2/utils/xnet"
+	"github.com/dawnsgo/dawn/registry/consul"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/registry"
+	"github.com/dawnsgo/dawn/utils/xnet"
 )
 
 const (

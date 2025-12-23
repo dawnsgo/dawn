@@ -2,7 +2,7 @@ package consul
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/v2/config"
+	"github.com/dawnsgo/dawn/config"
 	"github.com/hashicorp/consul/api"
 	"path/filepath"
 	"strings"

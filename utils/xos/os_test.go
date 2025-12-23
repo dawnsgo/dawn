@@ -3,7 +3,7 @@ package xos_test
 import (
 	"testing"
 
-	xfile "github.com/dawnsgo/dawn/v2/utils/xos"
+	xfile "github.com/dawnsgo/dawn/utils/xos"
 )
 
 func TestWriteFile(t *testing.T) {

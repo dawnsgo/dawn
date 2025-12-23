@@ -5,12 +5,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/core/endpoint"
-	xnet "github.com/dawnsgo/dawn/v2/core/net"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/codes"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/protocol"
-	"github.com/dawnsgo/dawn/v2/internal/transporter/internal/route"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/core/endpoint"
+	xnet "github.com/dawnsgo/dawn/core/net"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/codes"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/protocol"
+	"github.com/dawnsgo/dawn/internal/transporter/internal/route"
+	"github.com/dawnsgo/dawn/log"
 )
 
 const scheme = "drpc"

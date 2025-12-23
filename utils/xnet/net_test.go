@@ -1,7 +1,7 @@
 package xnet_test
 
 import (
-	"github.com/dawnsgo/dawn/v2/utils/xnet"
+	"github.com/dawnsgo/dawn/utils/xnet"
 	"testing"
 )
 

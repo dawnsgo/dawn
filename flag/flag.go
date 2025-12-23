@@ -2,8 +2,8 @@ package flag
 
 import (
 	"fmt"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/utils/xconv"
 	"log"
 	"os"
 	"time"

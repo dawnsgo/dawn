@@ -1,7 +1,7 @@
 package log
 
 import (
-	"github.com/dawnsgo/dawn/v2/log/internal"
+	"github.com/dawnsgo/dawn/log/internal"
 )
 
 // Terminal 日志输出终端

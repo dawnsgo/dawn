@@ -1,7 +1,7 @@
 package endpoint_test
 
 import (
-	"github.com/dawnsgo/dawn/v2/core/endpoint"
+	"github.com/dawnsgo/dawn/core/endpoint"
 	"testing"
 )
 

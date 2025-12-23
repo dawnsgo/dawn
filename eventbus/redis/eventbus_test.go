@@ -2,8 +2,8 @@ package redis_test
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/eventbus/redis/v2"
-	"github.com/dawnsgo/dawn/v2/eventbus"
+	"github.com/dawnsgo/dawn/eventbus/redis"
+	"github.com/dawnsgo/dawn/eventbus"
 	"log"
 	"testing"
 	"time"

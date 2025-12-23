@@ -5,7 +5,7 @@ import (
 	"crypto/x509"
 	"os"
 
-	"github.com/dawnsgo/dawn/v2/errors"
+	"github.com/dawnsgo/dawn/errors"
 )
 
 func MakeRedisTLSConfig(certFile, keyFile, caFile string) (*tls.Config, error) {

@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/registry"
+	"github.com/dawnsgo/dawn/registry"
 )
 
 type watcher struct {

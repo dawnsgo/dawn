@@ -5,12 +5,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/core/chains"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/session"
-	"github.com/dawnsgo/dawn/v2/task"
-	"github.com/dawnsgo/dawn/v2/transport"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/core/chains"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/session"
+	"github.com/dawnsgo/dawn/task"
+	"github.com/dawnsgo/dawn/transport"
 )
 
 type event struct {

@@ -1,9 +1,9 @@
 package mode
 
 import (
-	"github.com/dawnsgo/dawn/v2/env"
-	"github.com/dawnsgo/dawn/v2/etc"
-	"github.com/dawnsgo/dawn/v2/flag"
+	"github.com/dawnsgo/dawn/env"
+	"github.com/dawnsgo/dawn/etc"
+	"github.com/dawnsgo/dawn/flag"
 )
 
 const (

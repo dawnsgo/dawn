@@ -5,8 +5,8 @@ import (
 	"net"
 	"sync/atomic"
 
-	ctls "github.com/dawnsgo/dawn/v2/core/tls"
-	"github.com/dawnsgo/dawn/v2/network"
+	ctls "github.com/dawnsgo/dawn/core/tls"
+	"github.com/dawnsgo/dawn/network"
 )
 
 type client struct {

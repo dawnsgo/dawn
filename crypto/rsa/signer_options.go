@@ -1,8 +1,8 @@
 package rsa
 
 import (
-	"github.com/dawnsgo/dawn/v2/core/hash"
-	"github.com/dawnsgo/dawn/v2/etc"
+	"github.com/dawnsgo/dawn/core/hash"
+	"github.com/dawnsgo/dawn/etc"
 	"strings"
 )
 

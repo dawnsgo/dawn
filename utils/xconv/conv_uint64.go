@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/utils/xreflect"
+	"github.com/dawnsgo/dawn/utils/xreflect"
 )
 
 func Uint64(val any) uint64 {

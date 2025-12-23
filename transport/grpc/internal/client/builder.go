@@ -3,9 +3,9 @@ package client
 import (
 	"sync"
 
-	"github.com/dawnsgo/dawn/transport/grpc/v2/internal/resolver/direct"
-	"github.com/dawnsgo/dawn/transport/grpc/v2/internal/resolver/discovery"
-	"github.com/dawnsgo/dawn/v2/registry"
+	"github.com/dawnsgo/dawn/transport/grpc/internal/resolver/direct"
+	"github.com/dawnsgo/dawn/transport/grpc/internal/resolver/discovery"
+	"github.com/dawnsgo/dawn/registry"
 	"golang.org/x/sync/singleflight"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

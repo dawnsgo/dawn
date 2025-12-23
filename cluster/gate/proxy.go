@@ -3,13 +3,13 @@ package gate
 import (
 	"context"
 
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/core/buffer"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/internal/link"
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/mode"
-	"github.com/dawnsgo/dawn/v2/packet"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/core/buffer"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/internal/link"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/mode"
+	"github.com/dawnsgo/dawn/packet"
 )
 
 type proxy struct {

@@ -3,7 +3,7 @@ package protocol
 import (
 	"encoding/binary"
 
-	"github.com/dawnsgo/dawn/v2/core/buffer"
+	"github.com/dawnsgo/dawn/core/buffer"
 )
 
 var heartbeat []byte

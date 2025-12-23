@@ -3,7 +3,7 @@ package logger
 import (
 	"sync"
 
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/log"
 	rpcxlog "github.com/smallnest/rpcx/log"
 )
 

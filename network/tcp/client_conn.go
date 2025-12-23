@@ -6,13 +6,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/network"
-	"github.com/dawnsgo/dawn/v2/packet"
-	"github.com/dawnsgo/dawn/v2/utils/xcall"
-	"github.com/dawnsgo/dawn/v2/utils/xnet"
-	"github.com/dawnsgo/dawn/v2/utils/xtime"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/network"
+	"github.com/dawnsgo/dawn/packet"
+	"github.com/dawnsgo/dawn/utils/xcall"
+	"github.com/dawnsgo/dawn/utils/xnet"
+	"github.com/dawnsgo/dawn/utils/xtime"
 )
 
 type clientConn struct {

@@ -4,10 +4,10 @@ import (
 	"context"
 	"sync"
 
-	"github.com/dawnsgo/dawn/v2/core/value"
-	"github.com/dawnsgo/dawn/v2/eventbus/internal"
-	"github.com/dawnsgo/dawn/v2/utils/xtime"
-	"github.com/dawnsgo/dawn/v2/utils/xuuid"
+	"github.com/dawnsgo/dawn/core/value"
+	"github.com/dawnsgo/dawn/eventbus/internal"
+	"github.com/dawnsgo/dawn/utils/xtime"
+	"github.com/dawnsgo/dawn/utils/xuuid"
 )
 
 type Eventbus struct {

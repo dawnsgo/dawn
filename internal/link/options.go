@@ -1,11 +1,11 @@
 package link
 
 import (
-	"github.com/dawnsgo/dawn/v2/cluster"
-	"github.com/dawnsgo/dawn/v2/crypto"
-	"github.com/dawnsgo/dawn/v2/encoding"
-	"github.com/dawnsgo/dawn/v2/locate"
-	"github.com/dawnsgo/dawn/v2/registry"
+	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/crypto"
+	"github.com/dawnsgo/dawn/encoding"
+	"github.com/dawnsgo/dawn/locate"
+	"github.com/dawnsgo/dawn/registry"
 )
 
 type Options struct {

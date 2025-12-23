@@ -2,8 +2,8 @@ package nats_test
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/eventbus/nats/v2"
-	"github.com/dawnsgo/dawn/v2/eventbus"
+	"github.com/dawnsgo/dawn/eventbus/nats"
+	"github.com/dawnsgo/dawn/eventbus"
 	"log"
 	"testing"
 	"time"

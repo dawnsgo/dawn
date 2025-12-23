@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/dawnsgo/dawn/v2/config"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/utils/xos"
+	"github.com/dawnsgo/dawn/config"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/utils/xos"
 )
 
 const Name = "file"

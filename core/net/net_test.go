@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/core/net"
+	"github.com/dawnsgo/dawn/core/net"
 )
 
 func TestParseAddr(t *testing.T) {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/dawnsgo/dawn/v2/core/tls"
-	"github.com/dawnsgo/dawn/v2/eventbus"
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
+	"github.com/dawnsgo/dawn/core/tls"
+	"github.com/dawnsgo/dawn/eventbus"
+	"github.com/dawnsgo/dawn/utils/xconv"
 	"github.com/go-redis/redis/v8"
 )
 

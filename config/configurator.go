@@ -12,10 +12,10 @@ import (
 	"sync/atomic"
 
 	"dario.cat/mergo"
-	"github.com/dawnsgo/dawn/v2/core/value"
-	"github.com/dawnsgo/dawn/v2/errors"
-	"github.com/dawnsgo/dawn/v2/utils/xconv"
-	"github.com/dawnsgo/dawn/v2/utils/xreflect"
+	"github.com/dawnsgo/dawn/core/value"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/utils/xconv"
+	"github.com/dawnsgo/dawn/utils/xreflect"
 	"github.com/jinzhu/copier"
 )
 

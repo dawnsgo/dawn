@@ -1,9 +1,9 @@
 package file
 
 import (
-	"github.com/dawnsgo/dawn/v2/config"
-	"github.com/dawnsgo/dawn/v2/config/file/core"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/config"
+	"github.com/dawnsgo/dawn/config/file/core"
+	"github.com/dawnsgo/dawn/log"
 )
 
 const Name = core.Name

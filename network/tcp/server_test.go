@@ -5,11 +5,11 @@ import (
 	_ "net/http/pprof"
 	"testing"
 
-	"github.com/dawnsgo/dawn/network/tcp/v2"
-	"github.com/dawnsgo/dawn/v2/core/buffer"
-	"github.com/dawnsgo/dawn/v2/log"
-	"github.com/dawnsgo/dawn/v2/network"
-	"github.com/dawnsgo/dawn/v2/packet"
+	"github.com/dawnsgo/dawn/network/tcp"
+	"github.com/dawnsgo/dawn/core/buffer"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/network"
+	"github.com/dawnsgo/dawn/packet"
 )
 
 func TestServer_Simple(t *testing.T) {

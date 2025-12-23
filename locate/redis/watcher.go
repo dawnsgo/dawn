@@ -3,8 +3,8 @@ package redis
 import (
 	"context"
 	"fmt"
-	"github.com/dawnsgo/dawn/v2/locate"
-	"github.com/dawnsgo/dawn/v2/log"
+	"github.com/dawnsgo/dawn/locate"
+	"github.com/dawnsgo/dawn/log"
 	"github.com/go-redis/redis/v8"
 	"sync"
 	"sync/atomic"

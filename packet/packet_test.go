@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/dawnsgo/dawn/v2/packet"
-	"github.com/dawnsgo/dawn/v2/utils/xrand"
+	"github.com/dawnsgo/dawn/packet"
+	"github.com/dawnsgo/dawn/utils/xrand"
 )
 
 var packer = packet.NewPacker(
