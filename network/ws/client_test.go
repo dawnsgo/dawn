@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dawnsgo/dawn/network/ws/v2"
+	"github.com/dawnsgo/dawn/network/ws"
 	"github.com/dawnsgo/dawn/core/buffer"
 	"github.com/dawnsgo/dawn/log"
 	"github.com/dawnsgo/dawn/network"

@@ -1,4 +1,4 @@
-module github.com/dawnsgo/dawn/network/ws/v2
+module github.com/dawnsgo/dawn/network/ws
 
 go 1.23.0
 
