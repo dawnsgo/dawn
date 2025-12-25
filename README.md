@@ -167,13 +167,13 @@ go install github.com/rpcxio/protoc-gen-rpcx@latest
 5.安装gorm dao代码生成工具（使用场景：使用[GORM](https://gorm.io/)作为数据库orm）
 
 ```shell
-go install github.com/dawnsgo/gorm-dao-generator@latest
+go install github.com/dawnsgo/gorm_dao_generator@latest
 ```
 
-6.安装mongo dao代码生成工具（使用场景：使用[MongoDB](https://github.com/dawnsgo/mongo-dao-generator.git)作为数据库orm）
+6.安装mongo dao代码生成工具（使用场景：使用[MongoDB](https://github.com/dawnsgo/mongo_dao_generator)作为数据库orm）
 
 ```shell
-go install github.com/dawnsgo/mongo-dao-generator@latest
+go install github.com/dawnsgo/mongo_dao_generator@latest
 ```
 
 ### 8.配置中心
