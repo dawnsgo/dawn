@@ -11,11 +11,11 @@ import (
 )
 
 const logo = `
-                    ____  __  ________
-                   / __ \/ / / / ____/
-                  / / / / / / / __/
-                 / /_/ / /_/ / /___
-                /_____/\____/_____/
+                    ____        __
+                   / __ \____  / /__  ____
+                  / / / / __ \/ / _ \/ __ \\
+                 / /_/ / / / / /  __/ / / /
+                /_____/_/ /_/_/\___/_/ /_/
 `
 
 const (
@@ -27,7 +27,7 @@ const (
 	leftBottomBorder  = "└"
 	rightBottomBorder = "┘"
 	website           = "https://github.com/orgs/dawnsgo/dawn"
-	version           = "v1.0.1"
+	version           = "v1.0.6"
 	global            = "Global"
 )
 
