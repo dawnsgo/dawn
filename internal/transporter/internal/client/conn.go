@@ -117,7 +117,7 @@ func (c *Conn) process(conn net.Conn) error {
 func (c *Conn) handshake(conn net.Conn) error {
 	var (
 		seq  = uint64(1)
-		call = make(chan []byte)
+		call = make(chan buffer.Buffer)
 	)
 
 	buf := protocol.EncodeHandshakeReq(seq, c.cli.opts.InsKind, c.cli.opts.InsID)
@@ -151,7 +151,7 @@ func (c *Conn) read(conn net.Conn) {
 		case <-c.ctx.Done():
 			return
 		default:
-			isHeartbeat, _, seq, data, err := protocol.ReadMessage(conn)
+			buf, err := protocol.ReaderBuffer(conn)
 			if err != nil {
 				c.retry(conn)
 				return
@@ -159,16 +159,15 @@ func (c *Conn) read(conn net.Conn) {
 
 			c.lastHeartbeatTime.Store(xtime.Now().Unix())
 
-			if isHeartbeat {
-				continue
+			if isHeartbeat, _, seq := protocol.ParseBuffer(buf.Bytes()); isHeartbeat {
+				buf.Release()
+			} else {
+				if call, ok := c.pending.extract(seq); ok {
+					call <- buf
+				} else {
+					buf.Release()
+				}
 			}
-
-			call, ok := c.pending.extract(seq)
-			if !ok {
-				continue
-			}
-
-			call <- data
 		}
 	}
 }

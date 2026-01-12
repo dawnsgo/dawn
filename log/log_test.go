@@ -18,8 +18,8 @@ func TestLog(t *testing.T) {
 func TestLogger(t *testing.T) {
 	log.SetLogger(log.NewLogger(log.WithLevel(log.LevelDebug)))
 
-	log.Debug("welcome to due-framework")
-	log.Info("welcome to due-framework")
-	log.Warn("welcome to due-framework")
-	log.Error("welcome to due-framework")
+	log.Debug("welcome to dawn-framework")
+	log.Info("welcome to dawn-framework")
+	log.Warn("welcome to dawn-framework")
+	log.Error("welcome to dawn-framework")
 }

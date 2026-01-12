@@ -9,39 +9,70 @@ import (
 )
 
 // ReadMessage 读取消息
-func ReadMessage(reader io.Reader) (isHeartbeat bool, route uint8, seq uint64, data []byte, err error) {
+func ReadMessage(reader io.Reader) (bool, uint8, uint64, []byte, error) {
 	buf := buffer.MallocBytes(defaultSizeBytes)
 	defer buf.Release()
 
-	if _, err = io.ReadFull(reader, buf.Bytes()); err != nil {
-		return
+	if _, err := io.ReadFull(reader, buf.Bytes()); err != nil {
+		return false, 0, 0, nil, err
 	}
 
 	size := binary.BigEndian.Uint32(buf.Bytes())
 
 	if size == 0 {
-		err = errors.ErrInvalidMessage
-		return
+		return false, 0, 0, nil, errors.ErrInvalidMessage
 	}
 
-	data = make([]byte, defaultSizeBytes+size)
+	data := make([]byte, defaultSizeBytes+size)
 	copy(data[:defaultSizeBytes], buf.Bytes())
 
-	if _, err = io.ReadFull(reader, data[defaultSizeBytes:]); err != nil {
-		return
+	if _, err := io.ReadFull(reader, data[defaultSizeBytes:]); err != nil {
+		return false, 0, 0, nil, err
 	}
 
-	header := data[defaultSizeBytes : defaultSizeBytes+defaultHeaderBytes][0]
+	isHeartbeat, route, seq := ParseBuffer(data)
 
-	isHeartbeat = header&heartbeatBit == heartbeatBit
+	return isHeartbeat, route, seq, data, nil
+}
 
-	if isHeartbeat {
-		return
+// ReadBuffer 以buffer的形式读取消息
+func ReaderBuffer(reader io.Reader) (buffer.Buffer, error) {
+	buf1 := buffer.MallocBytes(defaultSizeBytes)
+	defer buf1.Release()
+
+	if _, err := io.ReadFull(reader, buf1.Bytes()); err != nil {
+		return nil, err
 	}
 
-	route = data[defaultSizeBytes+defaultHeaderBytes : defaultSizeBytes+defaultHeaderBytes+defaultRouteBytes][0]
+	size := binary.BigEndian.Uint32(buf1.Bytes())
 
-	seq = binary.BigEndian.Uint64(data[defaultSizeBytes+defaultHeaderBytes+defaultRouteBytes : defaultSizeBytes+defaultHeaderBytes+defaultRouteBytes+8])
+	if size == 0 {
+		return nil, errors.ErrInvalidMessage
+	}
 
-	return
+	buf2 := buffer.MallocBytes(int(defaultSizeBytes + size))
+	data := buf2.Bytes()
+
+	copy(data[:defaultSizeBytes], buf1.Bytes())
+
+	if _, err := io.ReadFull(reader, data[defaultSizeBytes:]); err != nil {
+		buf2.Release()
+		return nil, err
+	}
+
+	return buf2, nil
+}
+
+// ParseBuffer 解析buffer
+func ParseBuffer(data []byte) (bool, uint8, uint64) {
+	if header := data[defaultSizeBytes : defaultSizeBytes+defaultHeaderBytes][0]; header&heartbeatBit == heartbeatBit {
+		return true, 0, 0
+	} else {
+		var (
+			route = data[defaultSizeBytes+defaultHeaderBytes : defaultSizeBytes+defaultHeaderBytes+defaultRouteBytes][0]
+			seq   = binary.BigEndian.Uint64(data[defaultSizeBytes+defaultHeaderBytes+defaultRouteBytes : defaultSizeBytes+defaultHeaderBytes+defaultRouteBytes+8])
+		)
+
+		return false, route, seq
+	}
 }
