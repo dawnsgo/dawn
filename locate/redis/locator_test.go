@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/locate/redis"
 	"github.com/dawnsgo/dawn/utils/xuuid"
-	"github.com/dobyte/due/locate/redis/v2"
 )
 
 var locator = redis.NewLocator(
