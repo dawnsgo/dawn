@@ -1,10 +1,11 @@
 module github.com/dawnsgo/dawn/locate/redis
 
-go 1.23.0
+go 1.24.0
 
 require (
-	github.com/dawnsgo/dawn v1.0.1
-	github.com/go-redis/redis/v8 v8.11.5
+	github.com/dawnsgo/dawn v1.0.6
+	github.com/dawnsgo/dawn/eventbus/redis v0.0.0-20260112033251-d4d2968c8264
+	github.com/redis/go-redis/v9 v9.17.2
 	golang.org/x/sync v0.13.0
 )
 
@@ -21,6 +22,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
+	github.com/panjf2000/ants/v2 v2.11.3 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	golang.org/x/arch v0.11.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect

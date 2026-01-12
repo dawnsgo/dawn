@@ -1,10 +1,10 @@
 module github.com/dawnsgo/dawn/log/aliyun
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/aliyun/aliyun-log-go-sdk v0.1.100
-	github.com/dawnsgo/dawn v1.0.1
+	github.com/dawnsgo/dawn v1.0.6
 )
 
 require (

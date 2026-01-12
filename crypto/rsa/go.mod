@@ -1,8 +1,8 @@
 module github.com/dawnsgo/dawn/crypto/rsa
 
-go 1.23.0
+go 1.24.0
 
-require github.com/dawnsgo/dawn v1.0.1
+require github.com/dawnsgo/dawn v1.0.6
 
 require (
 	dario.cat/mergo v1.0.1 // indirect

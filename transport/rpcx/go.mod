@@ -1,9 +1,9 @@
-module github.com/dawnsgo/dawn/transport/rpcx/v2
+module github.com/dawnsgo/dawn/transport/rpcx
 
-go 1.23.0
+go 1.24.0
 
 require (
-	github.com/dawnsgo/dawn v1.0.1
+	github.com/dawnsgo/dawn v1.0.6
 	github.com/smallnest/rpcx v1.9.1
 	golang.org/x/sync v0.13.0
 )

@@ -1,9 +1,9 @@
 module github.com/dawnsgo/dawn/log/tencent
 
-go 1.23.0
+go 1.24.0
 
 require (
-	github.com/dawnsgo/dawn v1.0.1
+	github.com/dawnsgo/dawn v1.0.6
 	github.com/tencentcloud/tencentcloud-cls-sdk-go v1.0.11
 )
 

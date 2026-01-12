@@ -29,6 +29,7 @@ readonly modules=(
     "./transport/grpc"
 )
 
+# shellcheck disable=SC2068
 for module in ${modules[@]}
 do
   cd "${module}"

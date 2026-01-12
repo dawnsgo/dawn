@@ -1,10 +1,10 @@
 module github.com/dawnsgo/dawn/lock/redis
 
-go 1.23.0
+go 1.24.0
 
 require (
-	github.com/dawnsgo/dawn v1.0.1
-	github.com/go-redis/redis/v8 v8.11.5
+	github.com/dawnsgo/dawn v1.0.6
+	github.com/redis/go-redis/v9 v9.17.2
 )
 
 require (

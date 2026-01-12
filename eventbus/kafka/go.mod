@@ -1,10 +1,10 @@
 module github.com/dawnsgo/dawn/eventbus/kafka
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/IBM/sarama v1.43.3
-	github.com/dawnsgo/dawn v1.0.1
+	github.com/dawnsgo/dawn v1.0.6
 )
 
 require (
