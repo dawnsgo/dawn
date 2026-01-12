@@ -133,8 +133,9 @@ type MulticastArgs struct {
 }
 
 type BroadcastArgs struct {
-	Kind session.Kind // 会话类型，session.Conn 或 session.User
-	Ack  bool         // 是否需要响应推送结果
+	Kind    session.Kind // 会话类型，session.Conn 或 session.User
+	Message *Message     // 消息
+	Ack     bool         // 是否需要响应推送结果
 }
 
 type SubscribeArgs struct {
