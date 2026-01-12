@@ -9,7 +9,7 @@ import (
 	"github.com/dawnsgo/dawn/lock"
 	"github.com/dawnsgo/dawn/utils/xconv"
 	"github.com/dawnsgo/dawn/utils/xuuid"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 type Maker struct {

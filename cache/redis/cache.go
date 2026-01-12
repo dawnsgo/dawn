@@ -10,7 +10,7 @@ import (
 	"github.com/dawnsgo/dawn/utils/xconv"
 	"github.com/dawnsgo/dawn/utils/xrand"
 	"github.com/dawnsgo/dawn/utils/xreflect"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/sync/singleflight"
 )
 

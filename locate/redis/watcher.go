@@ -3,11 +3,12 @@ package redis
 import (
 	"context"
 	"fmt"
-	"github.com/dawnsgo/dawn/locate"
-	"github.com/dawnsgo/dawn/log"
-	"github.com/go-redis/redis/v8"
 	"sync"
 	"sync/atomic"
+
+	"github.com/dawnsgo/dawn/locate"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/redis/go-redis/v9"
 )
 
 type watcher struct {

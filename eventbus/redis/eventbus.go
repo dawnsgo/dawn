@@ -7,7 +7,7 @@ import (
 	"github.com/dawnsgo/dawn/core/tls"
 	"github.com/dawnsgo/dawn/eventbus"
 	"github.com/dawnsgo/dawn/utils/xconv"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 type Eventbus struct {
