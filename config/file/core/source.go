@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/config"
 	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/utils/xos"
@@ -42,7 +43,7 @@ func (s *Source) Load(ctx context.Context, file ...string) ([]*config.Configurat
 		}
 
 		if !info.IsDir() {
-			return nil, errors.New("the specified file cannot be loaded at the file path")
+			return nil, errors.NewWithCode(codes.InvalidFilePath, "the specified file cannot be loaded at the file path")
 		}
 
 		path = filepath.Join(s.path, file[0])
@@ -77,7 +78,7 @@ func (s *Source) Store(ctx context.Context, file string, content []byte) error {
 	}
 
 	if !info.IsDir() {
-		return errors.New("the specified file cannot be modified under the file path")
+		return errors.NewWithCode(codes.InvalidFilePath, "the specified file cannot be modified under the file path")
 	}
 
 	return xos.WriteFile(filepath.Join(s.path, file), content)

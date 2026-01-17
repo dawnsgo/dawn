@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 
 	"dario.cat/mergo"
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/core/value"
 	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/utils/xconv"
@@ -404,7 +405,7 @@ func (c *defaultConfigurator) Set(pattern string, value any) error {
 			}
 
 			if ii >= len(vs) {
-				return errors.New("index overflow")
+				return errors.NewWithCode(codes.IndexOverflow, "index overflow")
 			}
 
 			if i == len(keys)-1 {

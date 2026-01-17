@@ -2,13 +2,6 @@ package nacos
 
 import (
 	"context"
-	"github.com/dawnsgo/dawn/config"
-	"github.com/dawnsgo/dawn/errors"
-	"github.com/dawnsgo/dawn/log"
-	"github.com/nacos-group/nacos-sdk-go/v2/clients"
-	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
-	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"net"
 	"net/url"
 	"path/filepath"
@@ -16,6 +9,15 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/dawnsgo/dawn/codes"
+	"github.com/dawnsgo/dawn/config"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/log"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/config_client"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 )
 
 const Name = "nacos"
@@ -344,7 +346,7 @@ func (s *Source) buildClient() (config_client.IConfigClient, error) {
 		if err != nil {
 			return nil, err
 		} else {
-			return nil, errors.New("invalid server urls")
+			return nil, errors.NewWithCode(codes.InvalidServerURL, "invalid server urls")
 		}
 	} else {
 		if err != nil {

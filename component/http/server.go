@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/component"
 	"github.com/dawnsgo/dawn/component/http/swagger"
 	"github.com/dawnsgo/dawn/core/info"
@@ -103,7 +104,7 @@ func (s *Server) Proxy() *Proxy {
 func (s *Server) Start() error {
 	listenAddr, exposeAddr, err := xnet.ParseAddr(s.opts.addr)
 	if err != nil {
-		return errors.NewError(err, "http addr parse failed")
+		return errors.WrapWithCode(err, codes.InvalidConfig, "http addr parse failed")
 	}
 
 	if s.opts.transporter != nil && s.opts.registry != nil {

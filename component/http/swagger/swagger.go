@@ -6,6 +6,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/dawnsgo/dawn/codes"
+	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/log"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/gofiber/fiber/v3"
@@ -27,16 +29,17 @@ const (
 	defaultSwaggerStylesUrl = "https://unpkg.com/swagger-ui@5.28.1/dist/swagger-ui.css"
 )
 
-func New(cfg Config) fiber.Handler {
+// NewWithError 创建 Swagger 中间件，返回错误而非直接退出
+func NewWithError(cfg Config) (fiber.Handler, error) {
 	// Verify Swagger file exists
 	if _, err := os.Stat(cfg.FilePath); os.IsNotExist(err) {
-		log.Fatalf("%s file does not exist", cfg.FilePath)
+		return nil, errors.WrapWithCode(err, codes.NotFound, cfg.FilePath+" file does not exist")
 	}
 
 	// Read Swagger Spec into memory
 	rawSpec, err := os.ReadFile(cfg.FilePath)
 	if err != nil {
-		log.Fatalf("Failed to read provided Swagger file (%s): %v", cfg.FilePath, err)
+		return nil, errors.WrapWithCode(err, codes.InternalError, "failed to read provided Swagger file")
 	}
 
 	// Generate URL path's for the middleware
@@ -97,5 +100,14 @@ func New(cfg Config) fiber.Handler {
 
 		// Pass Fiber context to handler
 		return middlewareHandler(c)
+	}, nil
+}
+
+// New 创建 Swagger 中间件（向后兼容，失败时会 panic）
+func New(cfg Config) fiber.Handler {
+	handler, err := NewWithError(cfg)
+	if err != nil {
+		log.Fatalf("create swagger middleware failed: %v", err)
 	}
+	return handler
 }

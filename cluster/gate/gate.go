@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 
 	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/component"
 	"github.com/dawnsgo/dawn/core/buffer"
 	"github.com/dawnsgo/dawn/core/info"
@@ -64,19 +65,19 @@ func (g *Gate) Name() string {
 // Init 初始化
 func (g *Gate) Init() error {
 	if g.opts.id == "" {
-		return errors.NewError("instance id can not be empty")
+		return errors.NewWithCode(codes.InvalidArgument, "instance id can not be empty")
 	}
 
 	if g.opts.server == nil {
-		return errors.NewError("server component is not injected")
+		return errors.NewWithCode(codes.MissingComponent, "server component is not injected")
 	}
 
 	if g.opts.locator == nil {
-		return errors.NewError("locator component is not injected")
+		return errors.NewWithCode(codes.MissingLocator, "locator component is not injected")
 	}
 
 	if g.opts.registry == nil {
-		return errors.NewError("registry component is not injected")
+		return errors.NewWithCode(codes.MissingComponent, "registry component is not injected")
 	}
 
 	return nil
@@ -148,7 +149,7 @@ func (g *Gate) startNetworkServer() error {
 	g.opts.server.OnReceive(g.handleReceive)
 
 	if err := g.opts.server.Start(); err != nil {
-		return errors.NewError(err, "network server start failed")
+		return errors.WrapWithCode(err, codes.NetworkError, "network server start failed")
 	}
 
 	return nil
@@ -207,7 +208,7 @@ func (g *Gate) startLinkerServer() error {
 		Expose: g.opts.expose,
 	})
 	if err != nil {
-		return errors.NewError(err, "link server create failed")
+		return errors.WrapWithCode(err, codes.InternalError, "link server create failed")
 	}
 
 	g.linker = transporter
@@ -244,7 +245,7 @@ func (g *Gate) registerServiceInstance() error {
 	defer cancel()
 
 	if err := g.opts.registry.Register(ctx, g.instance); err != nil {
-		return errors.NewError(err, "register cluster instance failed")
+		return errors.WrapWithCode(err, codes.ServiceRegisterFailed, "register cluster instance failed")
 	}
 
 	return nil

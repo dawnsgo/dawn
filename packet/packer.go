@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/core/buffer"
 	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/log"
@@ -62,15 +63,15 @@ func NewPacker(opts ...Option) (*defaultPacker, error) {
 	}
 
 	if o.routeBytes != 1 && o.routeBytes != 2 && o.routeBytes != 4 {
-		return nil, errors.NewError("the number of route bytes must be 1, 2, or 4")
+		return nil, errors.NewWithCode(codes.InvalidArgument, "the number of route bytes must be 1, 2, or 4")
 	}
 
 	if o.seqBytes != 0 && o.seqBytes != 1 && o.seqBytes != 2 && o.seqBytes != 4 {
-		return nil, errors.NewError("the number of seq bytes must be 0, 1, 2, or 4")
+		return nil, errors.NewWithCode(codes.InvalidArgument, "the number of seq bytes must be 0, 1, 2, or 4")
 	}
 
 	if o.bufferBytes < 0 {
-		return nil, errors.NewError("the number of buffer bytes must be greater than or equal to 0")
+		return nil, errors.NewWithCode(codes.InvalidArgument, "the number of buffer bytes must be greater than or equal to 0")
 	}
 
 	return &defaultPacker{

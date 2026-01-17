@@ -8,12 +8,16 @@
 package encoding
 
 import (
+	"fmt"
+
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/encoding/json"
 	"github.com/dawnsgo/dawn/encoding/msgpack"
 	"github.com/dawnsgo/dawn/encoding/proto"
 	"github.com/dawnsgo/dawn/encoding/toml"
 	"github.com/dawnsgo/dawn/encoding/xml"
 	"github.com/dawnsgo/dawn/encoding/yaml"
+	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/log"
 )
 
@@ -40,13 +44,13 @@ type Codec interface {
 // Register 注册编解码器
 func Register(codec Codec) {
 	if codec == nil {
-		log.Fatal("can't register a invalid codec")
+		panic("can't register a nil codec")
 	}
 
 	name := codec.Name()
 
 	if name == "" {
-		log.Fatal("can't register a codec without name")
+		panic("can't register a codec without name")
 	}
 
 	if _, ok := codecs[name]; ok {
@@ -60,8 +64,18 @@ func Register(codec Codec) {
 func Invoke(name string) Codec {
 	codec, ok := codecs[name]
 	if !ok {
-		log.Fatalf("%s codec is not registered", name)
+		panic(fmt.Sprintf("%s codec is not registered", name))
 	}
 
 	return codec
+}
+
+// InvokeWithError 调用编解码器（返回错误）
+func InvokeWithError(name string) (Codec, error) {
+	codec, ok := codecs[name]
+	if !ok {
+		return nil, errors.NewWithCode(codes.CodecNotRegistered, fmt.Sprintf("%s codec is not registered", name))
+	}
+
+	return codec, nil
 }

@@ -51,7 +51,7 @@ func (w *watcher) init() (err error) {
 
 	xcall.Go(func() {
 		if err = w.plan.RunWithClientAndHclog(w.source.opts.client, nil); err != nil {
-			log.Fatalf("create watcher failed: %v", err)
+			log.Errorf("consul watcher run failed: %v", err)
 		}
 	})
 

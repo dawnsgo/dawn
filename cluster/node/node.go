@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/component"
 	"github.com/dawnsgo/dawn/core/info"
 	"github.com/dawnsgo/dawn/errors"
@@ -94,23 +95,23 @@ func (n *Node) Name() string {
 // Init 初始化节点
 func (n *Node) Init() error {
 	if n.opts.id == "" {
-		return errors.NewError("instance id can not be empty")
+		return errors.NewWithCode(codes.InvalidArgument, "instance id can not be empty")
 	}
 
 	if n.opts.name == "" {
-		return errors.NewError("instance name can not be empty")
+		return errors.NewWithCode(codes.InvalidArgument, "instance name can not be empty")
 	}
 
 	if n.opts.codec == nil {
-		return errors.NewError("codec component is not injected")
+		return errors.NewWithCode(codes.MissingComponent, "codec component is not injected")
 	}
 
 	if n.opts.locator == nil {
-		return errors.NewError("locator component is not injected")
+		return errors.NewWithCode(codes.MissingLocator, "locator component is not injected")
 	}
 
 	if n.opts.registry == nil {
-		return errors.NewError("registry component is not injected")
+		return errors.NewWithCode(codes.MissingComponent, "registry component is not injected")
 	}
 
 	n.runHookFunc(cluster.Init)
@@ -231,7 +232,7 @@ func (n *Node) startLinkServer() error {
 		Expose: n.opts.expose,
 	})
 	if err != nil {
-		return errors.NewError(err, "link server create failed")
+		return errors.WrapWithCode(err, codes.InternalError, "link server create failed")
 	}
 
 	n.linker = linker
@@ -266,14 +267,14 @@ func (n *Node) startTransportServer() error {
 
 	transporter, err := n.opts.transporter.NewServer()
 	if err != nil {
-		return errors.NewError(err, "transport server create failed")
+		return errors.WrapWithCode(err, codes.InternalError, "transport server create failed")
 	}
 
 	n.transporter = transporter
 
 	for _, entity := range n.services {
 		if err = n.transporter.RegisterService(entity.desc, entity.provider); err != nil {
-			return errors.NewError(err, "register service failed")
+			return errors.WrapWithCode(err, codes.ServiceRegisterFailed, "register service failed")
 		}
 	}
 
@@ -348,7 +349,7 @@ func (n *Node) registerServiceInstances() error {
 	}
 
 	if err := n.doRegisterServiceInstances(); err != nil {
-		return errors.NewError(err, "register cluster instances failed")
+		return errors.WrapWithCode(err, codes.ServiceRegisterFailed, "register cluster instances failed")
 	}
 
 	return nil

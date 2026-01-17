@@ -40,9 +40,9 @@ func NewBuilder(opts *Options) *Builder {
 	b.builders = make(map[string]resolver.Builder)
 	b.dialOpts = cli.DefaultOption
 	b.dialOpts.CompressType = proto.Gzip
-	b.RegisterBuilder(direct.NewBuilder(opts.Discovery))
+	b.RegisterBuilder(direct.MustNewBuilder(opts.Discovery))
 	if opts.Discovery != nil {
-		b.RegisterBuilder(discovery.NewBuilder(opts.Discovery))
+		b.RegisterBuilder(discovery.MustNewBuilder(opts.Discovery))
 	}
 
 	if opts.CAFile != "" {

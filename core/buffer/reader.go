@@ -2,9 +2,11 @@ package buffer
 
 import (
 	"encoding/binary"
-	"github.com/dawnsgo/dawn/errors"
 	"io"
 	"math"
+
+	"github.com/dawnsgo/dawn/codes"
+	"github.com/dawnsgo/dawn/errors"
 )
 
 type Reader struct {
@@ -32,10 +34,10 @@ func (r *Reader) Seek(offset int64, whence int) (int64, error) {
 	case io.SeekEnd:
 		abs = int64(len(r.buf)) + offset
 	default:
-		return 0, errors.New("buffer.Reader.Seek: invalid whence")
+		return 0, errors.NewWithCode(codes.InvalidSeekWhence, "buffer.Reader.Seek: invalid whence")
 	}
 	if abs < 0 {
-		return 0, errors.New("buffer.Reader.Seek: negative position")
+		return 0, errors.NewWithCode(codes.NegativePosition, "buffer.Reader.Seek: negative position")
 	}
 	r.off = int(abs)
 	return abs, nil

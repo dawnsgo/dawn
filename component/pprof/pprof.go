@@ -5,6 +5,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/component"
 	"github.com/dawnsgo/dawn/core/info"
 	xnet "github.com/dawnsgo/dawn/core/net"
@@ -35,7 +36,7 @@ func (*PProf) Name() string {
 func (p *PProf) Start() error {
 	listenAddr, exposeAddr, err := xnet.ParseAddr(p.opts.addr)
 	if err != nil {
-		return errors.NewError(err, "pprof addr parse failed")
+		return errors.WrapWithCode(err, codes.InvalidConfig, "pprof addr parse failed")
 	}
 
 	go func() {

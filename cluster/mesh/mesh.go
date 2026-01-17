@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/component"
 	"github.com/dawnsgo/dawn/core/info"
 	"github.com/dawnsgo/dawn/errors"
@@ -63,15 +64,15 @@ func (m *Mesh) Name() string {
 // Init 初始化节点
 func (m *Mesh) Init() error {
 	if m.opts.codec == nil {
-		return errors.NewError("codec component is not injected")
+		return errors.NewWithCode(codes.MissingComponent, "codec component is not injected")
 	}
 
 	if m.opts.registry == nil {
-		return errors.NewError("registry component is not injected")
+		return errors.NewWithCode(codes.MissingComponent, "registry component is not injected")
 	}
 
 	if m.opts.transporter == nil {
-		return errors.NewError("transporter component is not injected")
+		return errors.NewWithCode(codes.MissingTransporter, "transporter component is not injected")
 	}
 
 	m.runHookFunc(cluster.Init)
@@ -147,14 +148,14 @@ func (m *Mesh) startTransportServer() error {
 
 	transporter, err := m.opts.transporter.NewServer()
 	if err != nil {
-		return errors.NewError(err, "transport server create failed")
+		return errors.WrapWithCode(err, codes.InternalError, "transport server create failed")
 	}
 
 	m.transporter = transporter
 
 	for _, entity := range m.services {
 		if err = m.transporter.RegisterService(entity.desc, entity.provider); err != nil {
-			return errors.NewError(err, "register service failed")
+			return errors.WrapWithCode(err, codes.ServiceRegisterFailed, "register service failed")
 		}
 	}
 
@@ -195,7 +196,7 @@ func (m *Mesh) registerServiceInstance() error {
 	defer cancel()
 
 	if err := m.opts.registry.Register(ctx, m.instance); err != nil {
-		return errors.NewError(err, "register cluster instance failed")
+		return errors.WrapWithCode(err, codes.ServiceRegisterFailed, "register cluster instance failed")
 	}
 
 	return nil

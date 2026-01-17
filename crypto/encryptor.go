@@ -1,6 +1,10 @@
 package crypto
 
 import (
+	"fmt"
+
+	"github.com/dawnsgo/dawn/codes"
+	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/log"
 )
 
@@ -18,13 +22,13 @@ var encryptors = make(map[string]Encryptor)
 // RegisterEncryptor 注册加密器
 func RegisterEncryptor(encryptor Encryptor) {
 	if encryptor == nil {
-		log.Fatal("can't register a invalid encryptor")
+		panic("can't register a nil encryptor")
 	}
 
 	name := encryptor.Name()
 
 	if name == "" {
-		log.Fatal("can't register a encryptor without name")
+		panic("can't register an encryptor without name")
 	}
 
 	if _, ok := encryptors[name]; ok {
@@ -38,8 +42,18 @@ func RegisterEncryptor(encryptor Encryptor) {
 func InvokeEncryptor(name string) Encryptor {
 	encryptor, ok := encryptors[name]
 	if !ok {
-		log.Fatalf("%s encryptor is not registered", name)
+		panic(fmt.Sprintf("%s encryptor is not registered", name))
 	}
 
 	return encryptor
+}
+
+// InvokeEncryptorWithError 调用加密器（返回错误）
+func InvokeEncryptorWithError(name string) (Encryptor, error) {
+	encryptor, ok := encryptors[name]
+	if !ok {
+		return nil, errors.NewWithCode(codes.EncryptorNotRegistered, fmt.Sprintf("%s encryptor is not registered", name))
+	}
+
+	return encryptor, nil
 }

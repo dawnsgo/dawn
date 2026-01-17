@@ -41,9 +41,9 @@ func NewBuilder(opts *Options) *Builder {
 	}
 
 	resolvers := make([]resolver.Builder, 0, 2)
-	resolvers = append(resolvers, direct.NewBuilder(opts.Discovery))
+	resolvers = append(resolvers, direct.MustNewBuilder(opts.Discovery))
 	if opts.Discovery != nil {
-		resolvers = append(resolvers, discovery.NewBuilder(opts.Discovery))
+		resolvers = append(resolvers, discovery.MustNewBuilder(opts.Discovery))
 	}
 
 	b.dialOpts = make([]grpc.DialOption, 0, len(opts.DialOpts)+2)

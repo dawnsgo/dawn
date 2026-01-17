@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/utils/xconv"
 	"github.com/dawnsgo/dawn/utils/xos"
@@ -70,7 +71,7 @@ func (k *Key) marshalPublicKey(format Format, out io.Writer) (err error) {
 			return
 		}
 	default:
-		return errors.New("invalid key format")
+		return errors.NewWithCode(codes.InvalidKeyFormat, "invalid key format")
 	}
 
 	err = pem.Encode(out, &pem.Block{
@@ -105,7 +106,7 @@ func (k *Key) marshalPrivateKey(format Format, out io.Writer) (err error) {
 			return
 		}
 	default:
-		return errors.New("invalid key format")
+		return errors.NewWithCode(codes.InvalidKeyFormat, "invalid key format")
 	}
 
 	err = pem.Encode(out, &pem.Block{

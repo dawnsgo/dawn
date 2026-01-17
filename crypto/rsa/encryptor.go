@@ -3,8 +3,10 @@ package rsa
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"github.com/dawnsgo/dawn/errors"
 	"math"
+
+	"github.com/dawnsgo/dawn/codes"
+	"github.com/dawnsgo/dawn/errors"
 )
 
 type Encryptor struct {
@@ -129,6 +131,6 @@ func (e *Encryptor) init() {
 	if e.opts.blockSize <= 0 {
 		e.opts.blockSize = blockSize
 	} else if e.opts.blockSize > blockSize {
-		e.err = errors.New("block message too long for RSA public key size")
+		e.err = errors.NewWithCode(codes.BlockSizeTooLarge, "block message too long for RSA public key size")
 	}
 }

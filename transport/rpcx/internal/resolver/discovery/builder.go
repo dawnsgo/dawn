@@ -2,15 +2,16 @@ package discovery
 
 import (
 	"context"
+	"net/url"
+	"sync"
+	"time"
+
 	"github.com/dawnsgo/dawn/cluster"
 	"github.com/dawnsgo/dawn/core/endpoint"
 	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/log"
 	"github.com/dawnsgo/dawn/registry"
 	cli "github.com/smallnest/rpcx/client"
-	"net/url"
-	"sync"
-	"time"
 )
 
 const scheme = "discovery"
@@ -27,15 +28,23 @@ type Builder struct {
 	resolvers sync.Map
 }
 
-func NewBuilder(dis registry.Discovery) *Builder {
+func NewBuilder(dis registry.Discovery) (*Builder, error) {
 	b := &Builder{}
 	b.dis = dis
 	b.ctx, b.cancel = context.WithCancel(context.Background())
 
 	if err := b.init(); err != nil {
-		log.Fatalf("init client builder failed: %v", err)
+		return nil, errors.Wrap(err, "init client builder failed")
 	}
 
+	return b, nil
+}
+
+func MustNewBuilder(dis registry.Discovery) *Builder {
+	b, err := NewBuilder(dis)
+	if err != nil {
+		log.Fatalf("init client builder failed: %v", err)
+	}
 	return b
 }
 

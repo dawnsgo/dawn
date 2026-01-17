@@ -1,6 +1,7 @@
 package file
 
 import (
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/config"
 	"github.com/dawnsgo/dawn/config/file/core"
 	"github.com/dawnsgo/dawn/errors"
@@ -21,7 +22,7 @@ func NewSource(opts ...Option) (config.Source, error) {
 	}
 
 	if o.path == "" {
-		return nil, errors.NewError("no config file path specified")
+		return nil, errors.NewWithCode(codes.InvalidConfig, "no config file path specified")
 	}
 
 	return core.NewSource(o.path, o.mode), nil

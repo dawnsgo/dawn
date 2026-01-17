@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/core/buffer"
 	"github.com/dawnsgo/dawn/core/endpoint"
 	"github.com/dawnsgo/dawn/errors"
@@ -419,7 +420,7 @@ func (l *NodeLinker) WatchUserLocate() error {
 	watcher, err := l.opts.Locator.Watch(ctx, cluster.Node.String())
 	cancel()
 	if err != nil {
-		return errors.NewError(err, "user locate event watch failed")
+		return errors.WrapWithCode(err, codes.InternalError, "user locate event watch failed")
 	}
 
 	go func() {
@@ -459,7 +460,7 @@ func (l *NodeLinker) WatchClusterInstance() error {
 	watcher, err := l.opts.Registry.Watch(ctx, cluster.Node.String())
 	cancel()
 	if err != nil {
-		return errors.NewError(err, "the cluster instance watch failed")
+		return errors.WrapWithCode(err, codes.InternalError, "the cluster instance watch failed")
 	}
 
 	go func() {

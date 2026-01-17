@@ -8,8 +8,8 @@
 package proto
 
 import (
-	"errors"
-
+	"github.com/dawnsgo/dawn/codes"
+	"github.com/dawnsgo/dawn/errors"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -28,7 +28,7 @@ func (codec) Name() string {
 func (codec) Marshal(v any) ([]byte, error) {
 	msg, ok := v.(proto.Message)
 	if !ok {
-		return nil, errors.New("can't marshal a value that not implements proto.Buffer interface")
+		return nil, errors.NewWithCode(codes.ProtoMarshalError, "can't marshal a value that not implements proto.Message interface")
 	}
 
 	return proto.Marshal(msg)
@@ -38,7 +38,7 @@ func (codec) Marshal(v any) ([]byte, error) {
 func (codec) Unmarshal(data []byte, v any) error {
 	msg, ok := v.(proto.Message)
 	if !ok {
-		return errors.New("can't unmarshal to a value that not implements proto.Buffer")
+		return errors.NewWithCode(codes.ProtoUnmarshalError, "can't unmarshal to a value that not implements proto.Message")
 	}
 
 	return proto.Unmarshal(data, msg)

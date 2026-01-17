@@ -1,6 +1,10 @@
 package crypto
 
 import (
+	"fmt"
+
+	"github.com/dawnsgo/dawn/codes"
+	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/log"
 )
 
@@ -18,13 +22,13 @@ var signers = make(map[string]Signer)
 // RegisterSigner 注册签名器
 func RegisterSigner(signer Signer) {
 	if signer == nil {
-		log.Fatal("can't register a invalid signer")
+		panic("can't register a nil signer")
 	}
 
 	name := signer.Name()
 
 	if name == "" {
-		log.Fatal("can't register a signer without name")
+		panic("can't register a signer without name")
 	}
 
 	if _, ok := signers[name]; ok {
@@ -38,8 +42,18 @@ func RegisterSigner(signer Signer) {
 func InvokeSigner(name string) Signer {
 	signer, ok := signers[name]
 	if !ok {
-		log.Fatalf("%s signer is not registered", name)
+		panic(fmt.Sprintf("%s signer is not registered", name))
 	}
 
 	return signer
+}
+
+// InvokeSignerWithError 调用签名器（返回错误）
+func InvokeSignerWithError(name string) (Signer, error) {
+	signer, ok := signers[name]
+	if !ok {
+		return nil, errors.NewWithCode(codes.SignerNotRegistered, fmt.Sprintf("%s signer is not registered", name))
+	}
+
+	return signer, nil
 }

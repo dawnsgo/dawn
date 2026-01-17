@@ -67,7 +67,7 @@ func (e *event) Kind() Kind {
 
 // Parse 解析消息
 func (e *event) Parse(v any) error {
-	return errors.NewError(errors.ErrIllegalOperation)
+	return errors.ErrIllegalOperation
 }
 
 // Defer 添加defer延迟调用栈
@@ -356,7 +356,7 @@ func (e *event) Reply(message *cluster.Message) error {
 
 // Response 响应消息
 func (e *event) Response(message any) error {
-	return errors.NewError(errors.ErrIllegalOperation)
+	return errors.ErrIllegalOperation
 }
 
 // Disconnect 关闭来自网关的连接

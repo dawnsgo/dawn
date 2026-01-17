@@ -2,11 +2,13 @@ package flag
 
 import (
 	"fmt"
-	"github.com/dawnsgo/dawn/errors"
-	"github.com/dawnsgo/dawn/utils/xconv"
 	"log"
 	"os"
 	"time"
+
+	"github.com/dawnsgo/dawn/codes"
+	"github.com/dawnsgo/dawn/errors"
+	"github.com/dawnsgo/dawn/utils/xconv"
 )
 
 var commandLine = newFlagSet(os.Args[1:])
@@ -128,7 +130,7 @@ func (f *flagSet) parseOne() (bool, error) {
 	}
 	name := s[numMinuses:]
 	if len(name) == 0 || name[0] == '-' || name[0] == '=' {
-		return false, errors.New(fmt.Sprintf("bad flag syntax: %s", s))
+		return false, errors.NewWithCode(codes.BadSyntax, fmt.Sprintf("bad flag syntax: %s", s))
 	}
 
 	// it's a flag. does it have an argument?

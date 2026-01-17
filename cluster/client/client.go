@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/dawnsgo/dawn/cluster"
+	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/component"
 	"github.com/dawnsgo/dawn/core/buffer"
 	"github.com/dawnsgo/dawn/core/info"
@@ -64,11 +65,11 @@ func (c *Client) Name() string {
 // Init 初始化节点
 func (c *Client) Init() error {
 	if c.opts.client == nil {
-		return errors.NewError("client plugin is not injected")
+		return errors.NewWithCode(codes.MissingComponent, "client plugin is not injected")
 	}
 
 	if c.opts.codec == nil {
-		return errors.NewError("codec plugin is not injected")
+		return errors.NewWithCode(codes.MissingComponent, "codec plugin is not injected")
 	}
 
 	c.runHookFunc(cluster.Init)

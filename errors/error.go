@@ -8,69 +8,123 @@ import (
 	"github.com/dawnsgo/dawn/core/stack"
 )
 
+// ============================================================================
+// 预定义错误（带错误码）
+// ============================================================================
+
+// 通用错误
 var (
-	ErrNil                     = New("nil")
-	ErrInvalidGID              = New("invalid gate id")
-	ErrInvalidNID              = New("invalid node id")
-	ErrInvalidMessage          = New("invalid message")
-	ErrInvalidReader           = New("invalid reader")
-	ErrNotFoundSession         = New("not found session")
-	ErrInvalidSessionKind      = New("invalid session kind")
-	ErrReceiveTargetEmpty      = New("the receive target is empty")
-	ErrInvalidArgument         = New("invalid argument")
-	ErrNotFoundRoute           = New("not found route")
-	ErrNotFoundEvent           = New("not found event")
-	ErrNotFoundEndpoint        = New("not found endpoint")
-	ErrNotFoundUserLocation    = New("not found user's location")
-	ErrClientShut              = New("client is shut")
-	ErrConnectionOpened        = New("connection is opened")
-	ErrConnectionHanged        = New("connection is hanged")
-	ErrConnectionClosed        = New("connection is closed")
-	ErrConnectionNotOpened     = New("connection is not opened")
-	ErrConnectionNotHanged     = New("connection is not hanged")
-	ErrTooManyConnection       = New("too many connection")
-	ErrSeqOverflow             = New("seq overflow")
-	ErrRouteOverflow           = New("route overflow")
-	ErrMessageTooLarge         = New("message too large")
-	ErrInvalidDecoder          = New("invalid decoder")
-	ErrInvalidScanner          = New("invalid scanner")
-	ErrNoOperationPermission   = New("no operation permission")
-	ErrInvalidConfigContent    = New("invalid config content")
-	ErrNotFoundConfigSource    = New("not found config source")
-	ErrInvalidFormat           = New("invalid format")
-	ErrIllegalRequest          = New("illegal request")
-	ErrIllegalOperation        = New("illegal operation")
-	ErrInvalidPointer          = New("invalid pointer")
-	ErrNotFoundLocator         = New("not found locator")
-	ErrUnexpectedEOF           = New("unexpected EOF")
-	ErrMissingTransporter      = New("missing transporter")
-	ErrMissingDiscovery        = New("missing discovery")
-	ErrNotFoundServiceAddress  = New("not found service address")
-	ErrUnknownError            = New("unknown error")
-	ErrClientClosed            = New("client is closed")
-	ErrServerClosed            = New("server is closed")
-	ErrActorExists             = New("actor exists")
-	ErrMissingDispatchStrategy = New("missing dispatch strategy")
-	ErrUnregisterRoute         = New("unregistered route")
-	ErrNotBindActor            = New("not bind actor")
-	ErrNotFoundActor           = New("not found actor")
-	ErrSyncerClosed            = New("syncer is closed")
-	ErrDeadlineExceeded        = New("deadline exceeded")
-	ErrMissingResolver         = New("missing resolver")
-	ErrServiceRegisterFailed   = New("service register failed")
-	ErrServiceDeregisterFailed = New("service deregister failed")
-	ErrInvalidPublicKey        = New("invalid public key")
-	ErrInvalidPrivateKey       = New("invalid private key")
-	ErrInvalidSignature        = New("invalid signature")
-	ErrNotFoundIPAddress       = New("not found ip address")
-	ErrInvalidServiceDesc      = New("invalid service desc")
-	ErrInvalidCertFile         = New("invalid cert file")
-	ErrMissingCacheInstance    = New("missing cache instance")
-	ErrMissingEventbusInstance = New("missing eventbus instance")
+	ErrNil              = NewWithCode(codes.Unknown, "nil")
+	ErrInvalidArgument  = NewWithCode(codes.InvalidArgument, "invalid argument")
+	ErrInvalidPointer   = NewWithCode(codes.InvalidPointer, "invalid pointer")
+	ErrInvalidFormat    = NewWithCode(codes.InvalidFormat, "invalid format")
+	ErrIllegalRequest   = NewWithCode(codes.IllegalRequest, "illegal request")
+	ErrIllegalOperation = NewWithCode(codes.IllegalInvoke, "illegal operation")
+	ErrDeadlineExceeded = NewWithCode(codes.DeadlineExceeded, "deadline exceeded")
+	ErrUnknownError     = NewWithCode(codes.Unknown, "unknown error")
+	ErrNoOperationPermission = NewWithCode(codes.PermissionDenied, "no operation permission")
 )
 
+// 网络/连接错误
+var (
+	ErrInvalidReader       = NewWithCode(codes.InvalidReader, "invalid reader")
+	ErrConnectionOpened    = NewWithCode(codes.ConnectionOpened, "connection is opened")
+	ErrConnectionHanged    = NewWithCode(codes.ConnectionHanged, "connection is hanged")
+	ErrConnectionClosed    = NewWithCode(codes.ConnectionClosed, "connection is closed")
+	ErrConnectionNotOpened = NewWithCode(codes.ConnectionNotOpened, "connection is not opened")
+	ErrConnectionNotHanged = NewWithCode(codes.ConnectionNotHanged, "connection is not hanged")
+	ErrTooManyConnection   = NewWithCode(codes.TooManyConnections, "too many connection")
+	ErrUnexpectedEOF       = NewWithCode(codes.UnexpectedEOF, "unexpected EOF")
+)
+
+// 会话/用户错误
+var (
+	ErrInvalidGID           = NewWithCode(codes.InvalidGateID, "invalid gate id")
+	ErrInvalidNID           = NewWithCode(codes.InvalidNodeID, "invalid node id")
+	ErrNotFoundSession      = NewWithCode(codes.SessionNotFound, "not found session")
+	ErrInvalidSessionKind   = NewWithCode(codes.InvalidSessionKind, "invalid session kind")
+	ErrNotFoundUserLocation = NewWithCode(codes.UserLocationNotFound, "not found user's location")
+	ErrActorExists          = NewWithCode(codes.ActorExists, "actor exists")
+	ErrNotFoundActor        = NewWithCode(codes.ActorNotFound, "not found actor")
+	ErrNotBindActor         = NewWithCode(codes.ActorNotBound, "not bind actor")
+)
+
+// 路由/消息错误
+var (
+	ErrInvalidMessage     = NewWithCode(codes.InvalidMessage, "invalid message")
+	ErrReceiveTargetEmpty = NewWithCode(codes.TargetEmpty, "the receive target is empty")
+	ErrNotFoundRoute      = NewWithCode(codes.RouteNotFound, "not found route")
+	ErrNotFoundEvent      = NewWithCode(codes.EventNotFound, "not found event")
+	ErrSeqOverflow        = NewWithCode(codes.SeqOverflow, "seq overflow")
+	ErrRouteOverflow      = NewWithCode(codes.RouteOverflow, "route overflow")
+	ErrMessageTooLarge    = NewWithCode(codes.MessageTooLarge, "message too large")
+	ErrInvalidDecoder     = NewWithCode(codes.InvalidDecoder, "invalid decoder")
+	ErrInvalidScanner     = NewWithCode(codes.InvalidScanner, "invalid scanner")
+	ErrUnregisterRoute    = NewWithCode(codes.RouteUnregistered, "unregistered route")
+)
+
+// 配置/初始化错误
+var (
+	ErrInvalidConfigContent    = NewWithCode(codes.InvalidConfig, "invalid config content")
+	ErrNotFoundConfigSource    = NewWithCode(codes.ConfigSourceNotFound, "not found config source")
+	ErrMissingTransporter      = NewWithCode(codes.MissingTransporter, "missing transporter")
+	ErrMissingDiscovery        = NewWithCode(codes.MissingDiscovery, "missing discovery")
+	ErrNotFoundLocator         = NewWithCode(codes.MissingLocator, "not found locator")
+	ErrMissingResolver         = NewWithCode(codes.MissingResolver, "missing resolver")
+	ErrMissingDispatchStrategy = NewWithCode(codes.MissingDispatchStrategy, "missing dispatch strategy")
+	ErrMissingCacheInstance    = NewWithCode(codes.MissingCacheInstance, "missing cache instance")
+	ErrMissingEventbusInstance = NewWithCode(codes.MissingEventbusInstance, "missing eventbus instance")
+	ErrClientShut              = NewWithCode(codes.ClientShut, "client is shut")
+	ErrClientClosed            = NewWithCode(codes.ClientShut, "client is closed")
+	ErrServerClosed            = NewWithCode(codes.ServerClosed, "server is closed")
+	ErrSyncerClosed            = NewWithCode(codes.SyncerClosed, "syncer is closed")
+)
+
+// 服务/集群错误
+var (
+	ErrNotFoundEndpoint        = NewWithCode(codes.EndpointNotFound, "not found endpoint")
+	ErrNotFoundServiceAddress  = NewWithCode(codes.ServiceAddressNotFound, "not found service address")
+	ErrServiceRegisterFailed   = NewWithCode(codes.ServiceRegisterFailed, "service register failed")
+	ErrServiceDeregisterFailed = NewWithCode(codes.ServiceDeregisterFailed, "service deregister failed")
+	ErrInvalidServiceDesc      = NewWithCode(codes.InvalidServiceDesc, "invalid service desc")
+	ErrNotFoundIPAddress       = NewWithCode(codes.ServiceAddressNotFound, "not found ip address")
+)
+
+// 安全/加密错误
+var (
+	ErrInvalidPublicKey  = NewWithCode(codes.InvalidPublicKey, "invalid public key")
+	ErrInvalidPrivateKey = NewWithCode(codes.InvalidPrivateKey, "invalid private key")
+	ErrInvalidSignature  = NewWithCode(codes.InvalidSignature, "invalid signature")
+	ErrInvalidCertFile   = NewWithCode(codes.InvalidCertFile, "invalid cert file")
+	ErrInvalidKeyFormat  = NewWithCode(codes.InvalidKeyFormat, "invalid key format")
+	ErrBlockSizeTooLarge = NewWithCode(codes.BlockSizeTooLarge, "block size too large for RSA key")
+)
+
+// 编码/序列化错误
+var (
+	ErrCodecNotRegistered     = NewWithCode(codes.CodecNotRegistered, "codec not registered")
+	ErrSignerNotRegistered    = NewWithCode(codes.SignerNotRegistered, "signer not registered")
+	ErrEncryptorNotRegistered = NewWithCode(codes.EncryptorNotRegistered, "encryptor not registered")
+	ErrProtoMarshalError      = NewWithCode(codes.ProtoMarshalError, "proto marshal error")
+	ErrProtoUnmarshalError    = NewWithCode(codes.ProtoUnmarshalError, "proto unmarshal error")
+)
+
+// ============================================================================
+// 错误创建函数
+// ============================================================================
+
+// NewSimple 新建一个简单错误
+func NewSimple(text string) *Error {
+	return &Error{text: text}
+}
+
+// NewWithCode 新建一个带错误码的错误
+func NewWithCode(code *codes.Code, text string) *Error {
+	return &Error{code: code, text: text}
+}
+
 // NewError 新建一个错误
-// 可传入一下参数：
+// 可传入以下参数：
 // text : 文本字符串
 // code : 错误码
 // error: 原生错误
@@ -92,7 +146,7 @@ func NewError(args ...any) *Error {
 }
 
 // NewErrorWithStack 新建一个带堆栈的错误
-// 可传入一下参数：
+// 可传入以下参数：
 // text : 文本字符串
 // code : 错误码
 // error: 原生错误
@@ -112,6 +166,26 @@ func NewErrorWithStack(args ...any) *Error {
 
 	return e
 }
+
+// Wrap 包装一个错误，添加上下文信息
+func Wrap(err error, message string) *Error {
+	if err == nil {
+		return nil
+	}
+	return &Error{err: err, text: message}
+}
+
+// WrapWithCode 包装一个错误，添加错误码和上下文信息
+func WrapWithCode(err error, code *codes.Code, message string) *Error {
+	if err == nil {
+		return nil
+	}
+	return &Error{err: err, code: code, text: message}
+}
+
+// ============================================================================
+// 错误辅助函数
+// ============================================================================
 
 // Code 返回错误码
 func Code(err error) *codes.Code {
@@ -150,6 +224,19 @@ func Cause(err error) error {
 	return err
 }
 
+// UnwrapError 解包错误（返回下一层错误）
+func UnwrapError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	if e, ok := err.(interface{ Unwrap() error }); ok {
+		return e.Unwrap()
+	}
+
+	return nil
+}
+
 // Stack 返回堆栈
 func Stack(err error) *stack.Stack {
 	if err == nil {
@@ -177,6 +264,76 @@ func Replace(err error, text string, condition ...codes.Code) error {
 
 	return err
 }
+
+// IsErr 判断错误是否是指定错误（支持链式错误和错误码比较）
+func IsErr(err, target error) bool {
+	if err == nil || target == nil {
+		return err == target
+	}
+
+	// 先使用标准库 Is 检查
+	if Is(err, target) {
+		return true
+	}
+
+	// 比较错误码
+	errCode := Code(err)
+	targetCode := Code(target)
+	if errCode != nil && targetCode != nil && errCode.Code() == targetCode.Code() {
+		return true
+	}
+
+	// 递归检查链式错误
+	if next := Next(err); next != nil {
+		return IsErr(next, target)
+	}
+
+	return false
+}
+
+// IsCode 判断错误是否是指定错误码
+func IsCode(err error, code *codes.Code) bool {
+	return codes.IsCode(err, code)
+}
+
+// IsNetworkError 判断是否是网络错误
+func IsNetworkError(err error) bool {
+	return codes.IsNetworkErr(err)
+}
+
+// IsSessionError 判断是否是会话错误
+func IsSessionError(err error) bool {
+	return codes.IsSessionErr(err)
+}
+
+// IsRouteError 判断是否是路由错误
+func IsRouteError(err error) bool {
+	return codes.IsRouteErr(err)
+}
+
+// IsConfigError 判断是否是配置错误
+func IsConfigError(err error) bool {
+	return codes.IsConfigErr(err)
+}
+
+// IsServiceError 判断是否是服务错误
+func IsServiceError(err error) bool {
+	return codes.IsServiceErr(err)
+}
+
+// IsSecurityError 判断是否是安全错误
+func IsSecurityError(err error) bool {
+	return codes.IsSecurityErr(err)
+}
+
+// IsEncodingError 判断是否是编码错误
+func IsEncodingError(err error) bool {
+	return codes.IsEncodingErr(err)
+}
+
+// ============================================================================
+// Error 结构体
+// ============================================================================
 
 type Error struct {
 	err   error
