@@ -18,18 +18,18 @@ import (
 )
 
 type clientConn struct {
-	rw                sync.RWMutex    // 锁
-	id                int64           // 连接ID
-	uid               atomic.Int64    // 用户ID
-	attr              *attr           // 连接属性
-	conn              *websocket.Conn // TCP源连接
-	state             atomic.Int32    // 连接状态
-	client            *client         // 客户端
-	chLowWrite        chan chWrite    // 低级队列
-	chHighWrite       chan chWrite    // 优先队列
-	lastHeartbeatTime atomic.Int64    // 上次心跳时间
-	done              chan struct{}   // 写入完成信号
-	close             chan struct{}   // 关闭信号
+	rw                sync.RWMutex         // 锁
+	id                int64                // 连接ID
+	uid               atomic.Int64         // 用户ID
+	attr              *network.DefaultAttr // 连接属性
+	conn              *websocket.Conn      // TCP源连接
+	state             atomic.Int32         // 连接状态
+	client            *client              // 客户端
+	chLowWrite        chan chWrite         // 低级队列
+	chHighWrite       chan chWrite         // 优先队列
+	lastHeartbeatTime atomic.Int64         // 上次心跳时间
+	done              chan struct{}        // 写入完成信号
+	close             chan struct{}        // 关闭信号
 }
 
 var _ network.Conn = &clientConn{}
@@ -37,7 +37,7 @@ var _ network.Conn = &clientConn{}
 func newClientConn(id int64, conn *websocket.Conn, client *client) network.Conn {
 	c := &clientConn{
 		id:          id,
-		attr:        &attr{},
+		attr:        network.NewAttr(),
 		conn:        conn,
 		client:      client,
 		chLowWrite:  make(chan chWrite, 4096),

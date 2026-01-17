@@ -17,16 +17,16 @@ import (
 
 type clientConn struct {
 	rw                sync.RWMutex
-	id                int64         // 连接ID
-	uid               atomic.Int64  // 用户ID
-	attr              *attr         // 连接属性
-	conn              net.Conn      // TCP源连接
-	state             atomic.Int32  // 连接状态
-	client            *client       // 客户端
-	chWrite           chan chWrite  // 写入队列
-	done              chan struct{} // 写入完成信号
-	close             chan struct{} // 关闭信号
-	lastHeartbeatTime atomic.Int64  // 上次心跳时间
+	id                int64                // 连接ID
+	uid               atomic.Int64         // 用户ID
+	attr              *network.DefaultAttr // 连接属性
+	conn              net.Conn             // TCP源连接
+	state             atomic.Int32         // 连接状态
+	client            *client              // 客户端
+	chWrite           chan chWrite         // 写入队列
+	done              chan struct{}        // 写入完成信号
+	close             chan struct{}        // 关闭信号
+	lastHeartbeatTime atomic.Int64         // 上次心跳时间
 }
 
 var _ network.Conn = &clientConn{}
@@ -34,7 +34,7 @@ var _ network.Conn = &clientConn{}
 func newClientConn(client *client, id int64, conn net.Conn) network.Conn {
 	c := &clientConn{
 		id:      id,
-		attr:    &attr{},
+		attr:    network.NewAttr(),
 		conn:    conn,
 		client:  client,
 		chWrite: make(chan chWrite, 4096),

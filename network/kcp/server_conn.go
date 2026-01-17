@@ -18,18 +18,18 @@ import (
 )
 
 type serverConn struct {
-	rw                sync.RWMutex    // 锁
-	id                int64           // 连接ID
-	uid               atomic.Int64    // 用户ID
-	attr              *attr           // 连接属性
-	state             atomic.Int32    // 连接状态
-	conn              *kcp.UDPSession // UDP源连接
-	connMgr           *serverConnMgr  // 连接管理
-	chWrite           chan chWrite    // 写入队列
-	done              chan struct{}   // 写入完成信号
-	close             chan struct{}   // 关闭信号
-	lastHeartbeatTime atomic.Int64    // 上次心跳时间
-	authorizeTimer    atomic.Value    // 授权定时器
+	rw                sync.RWMutex         // 锁
+	id                int64                // 连接ID
+	uid               atomic.Int64         // 用户ID
+	attr              *network.DefaultAttr // 连接属性
+	state             atomic.Int32         // 连接状态
+	conn              *kcp.UDPSession      // UDP源连接
+	connMgr           *serverConnMgr       // 连接管理
+	chWrite           chan chWrite         // 写入队列
+	done              chan struct{}        // 写入完成信号
+	close             chan struct{}        // 关闭信号
+	lastHeartbeatTime atomic.Int64         // 上次心跳时间
+	authorizeTimer    atomic.Value         // 授权定时器
 }
 
 var _ network.Conn = &serverConn{}
@@ -172,7 +172,7 @@ func (c *serverConn) init(cm *serverConnMgr, id int64, conn *kcp.UDPSession) {
 	c.id = id
 	c.uid.Store(0)
 	c.state.Store(int32(network.ConnOpened))
-	c.attr = &attr{}
+	c.attr = network.NewAttr()
 	c.conn = conn
 	c.connMgr = cm
 	c.chWrite = make(chan chWrite, 4096)

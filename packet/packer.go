@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/dawnsgo/dawn/core/buffer"
@@ -48,8 +49,9 @@ type Packer interface {
 }
 
 type defaultPacker struct {
-	opts      *options
-	heartbeat []byte
+	opts       *options
+	heartbeat  []byte
+	bufferPool sync.Pool // 复用 bytes.Buffer
 }
 
 func NewPacker(opts ...Option) *defaultPacker {
@@ -73,6 +75,11 @@ func NewPacker(opts ...Option) *defaultPacker {
 	return &defaultPacker{
 		opts:      o,
 		heartbeat: makeHeartbeat(o.byteOrder),
+		bufferPool: sync.Pool{
+			New: func() any {
+				return bytes.NewBuffer(make([]byte, 0, defaultSizeBytes+defaultHeaderBytes+o.routeBytes+o.seqBytes+256))
+			},
+		},
 	}
 }
 
@@ -106,41 +113,16 @@ func (p *defaultPacker) ReadBuffer(reader io.Reader) (buffer.Buffer, error) {
 
 // PackBuffer 以buffer的形式打包消息
 func (p *defaultPacker) PackBuffer(message *Message) (*buffer.NocopyBuffer, error) {
-	if message.Route > int32(1<<(8*p.opts.routeBytes-1)-1) || message.Route < int32(-1<<(8*p.opts.routeBytes-1)) {
-		return nil, errors.ErrRouteOverflow
-	}
-
-	if p.opts.seqBytes > 0 {
-		if message.Seq > int32(1<<(8*p.opts.seqBytes-1)-1) || message.Seq < int32(-1<<(8*p.opts.seqBytes-1)) {
-			return nil, errors.ErrSeqOverflow
-		}
-	}
-
-	if len(message.Buffer) > p.opts.bufferBytes {
-		return nil, errors.ErrMessageTooLarge
+	if err := p.validateMessage(message); err != nil {
+		return nil, err
 	}
 
 	writer := buffer.MallocWriter(defaultSizeBytes + defaultHeaderBytes + p.opts.routeBytes + p.opts.seqBytes)
 	writer.WriteInt32s(p.opts.byteOrder, int32(defaultHeaderBytes+p.opts.routeBytes+p.opts.seqBytes+len(message.Buffer)))
 	writer.WriteInt8s(int8(dataBit))
 
-	switch p.opts.routeBytes {
-	case 1:
-		writer.WriteInt8s(int8(message.Route))
-	case 2:
-		writer.WriteInt16s(p.opts.byteOrder, int16(message.Route))
-	case 4:
-		writer.WriteInt32s(p.opts.byteOrder, message.Route)
-	}
-
-	switch p.opts.seqBytes {
-	case 1:
-		writer.WriteInt8s(int8(message.Seq))
-	case 2:
-		writer.WriteInt16s(p.opts.byteOrder, int16(message.Seq))
-	case 4:
-		writer.WriteInt32s(p.opts.byteOrder, message.Seq)
-	}
+	p.writeRouteToWriter(writer, message.Route)
+	p.writeSeqToWriter(writer, message.Seq)
 
 	return buffer.NewNocopyBuffer(writer, message.Buffer), nil
 }
@@ -170,7 +152,7 @@ func (p *defaultPacker) ReadMessage(reader io.Reader) ([]byte, error) {
 	return data, nil
 }
 
-// 无拷贝读取消息
+// nocopyReadMessage 无拷贝读取消息
 func (p *defaultPacker) nocopyReadMessage(reader NocopyReader) ([]byte, error) {
 	buf, err := reader.Peek(defaultSizeBytes)
 	if err != nil {
@@ -210,84 +192,55 @@ func (p *defaultPacker) nocopyReadMessage(reader NocopyReader) ([]byte, error) {
 
 // PackMessage 打包消息
 func (p *defaultPacker) PackMessage(message *Message) ([]byte, error) {
-	if message.Route > int32(1<<(8*p.opts.routeBytes-1)-1) || message.Route < int32(-1<<(8*p.opts.routeBytes-1)) {
-		return nil, errors.ErrRouteOverflow
+	if err := p.validateMessage(message); err != nil {
+		return nil, err
 	}
 
-	if p.opts.seqBytes > 0 {
-		if message.Seq > int32(1<<(8*p.opts.seqBytes-1)-1) || message.Seq < int32(-1<<(8*p.opts.seqBytes-1)) {
-			return nil, errors.ErrSeqOverflow
-		}
-	}
-
-	if len(message.Buffer) > p.opts.bufferBytes {
-		return nil, errors.ErrMessageTooLarge
-	}
-
-	var (
-		size = defaultHeaderBytes + p.opts.routeBytes + p.opts.seqBytes + len(message.Buffer)
-		buf  = &bytes.Buffer{}
-	)
+	size := defaultHeaderBytes + p.opts.routeBytes + p.opts.seqBytes + len(message.Buffer)
+	buf := p.getBuffer()
+	defer p.putBuffer(buf)
 
 	buf.Grow(size + defaultSizeBytes)
 
-	err := binary.Write(buf, p.opts.byteOrder, int32(size))
-	if err != nil {
+	if err := binary.Write(buf, p.opts.byteOrder, int32(size)); err != nil {
 		return nil, err
 	}
 
-	err = binary.Write(buf, p.opts.byteOrder, int8(dataBit))
-	if err != nil {
+	if err := binary.Write(buf, p.opts.byteOrder, int8(dataBit)); err != nil {
 		return nil, err
 	}
 
-	switch p.opts.routeBytes {
-	case 1:
-		err = binary.Write(buf, p.opts.byteOrder, int8(message.Route))
-	case 2:
-		err = binary.Write(buf, p.opts.byteOrder, int16(message.Route))
-	case 4:
-		err = binary.Write(buf, p.opts.byteOrder, message.Route)
-	}
-	if err != nil {
+	if err := p.writeRouteToBuf(buf, message.Route); err != nil {
 		return nil, err
 	}
 
-	switch p.opts.seqBytes {
-	case 1:
-		err = binary.Write(buf, p.opts.byteOrder, int8(message.Seq))
-	case 2:
-		err = binary.Write(buf, p.opts.byteOrder, int16(message.Seq))
-	case 4:
-		err = binary.Write(buf, p.opts.byteOrder, message.Seq)
-	}
-	if err != nil {
+	if err := p.writeSeqToBuf(buf, message.Seq); err != nil {
 		return nil, err
 	}
 
-	err = binary.Write(buf, p.opts.byteOrder, message.Buffer)
-	if err != nil {
+	if err := binary.Write(buf, p.opts.byteOrder, message.Buffer); err != nil {
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	// 复制一份返回，因为 buf 会被放回池中复用
+	result := make([]byte, buf.Len())
+	copy(result, buf.Bytes())
+
+	return result, nil
 }
 
 // UnpackMessage 解包消息
 func (p *defaultPacker) UnpackMessage(data []byte) (*Message, error) {
-	var (
-		ln     = defaultSizeBytes + defaultHeaderBytes + p.opts.routeBytes + p.opts.seqBytes
-		reader = bytes.NewReader(data)
-		size   uint32
-		header uint8
-	)
+	ln := defaultSizeBytes + defaultHeaderBytes + p.opts.routeBytes + p.opts.seqBytes
 
 	if len(data)-ln < 0 {
 		return nil, errors.ErrInvalidMessage
 	}
 
-	err := binary.Read(reader, p.opts.byteOrder, &size)
-	if err != nil {
+	reader := bytes.NewReader(data)
+
+	var size uint32
+	if err := binary.Read(reader, p.opts.byteOrder, &size); err != nil {
 		return nil, err
 	}
 
@@ -295,8 +248,8 @@ func (p *defaultPacker) UnpackMessage(data []byte) (*Message, error) {
 		return nil, errors.ErrInvalidMessage
 	}
 
-	err = binary.Read(reader, p.opts.byteOrder, &header)
-	if err != nil {
+	var header uint8
+	if err := binary.Read(reader, p.opts.byteOrder, &header); err != nil {
 		return nil, err
 	}
 
@@ -304,69 +257,30 @@ func (p *defaultPacker) UnpackMessage(data []byte) (*Message, error) {
 		return nil, errors.ErrInvalidMessage
 	}
 
-	message := &Message{}
-
-	switch p.opts.routeBytes {
-	case 1:
-		var route int8
-		if err = binary.Read(reader, p.opts.byteOrder, &route); err != nil {
-			return nil, err
-		} else {
-			message.Route = int32(route)
-		}
-	case 2:
-		var route int16
-		if err = binary.Read(reader, p.opts.byteOrder, &route); err != nil {
-			return nil, err
-		} else {
-			message.Route = int32(route)
-		}
-	case 4:
-		var route int32
-		if err = binary.Read(reader, p.opts.byteOrder, &route); err != nil {
-			return nil, err
-		} else {
-			message.Route = route
-		}
+	route, err := p.readRoute(reader)
+	if err != nil {
+		return nil, err
 	}
 
-	switch p.opts.seqBytes {
-	case 1:
-		var seq int8
-		if err = binary.Read(reader, p.opts.byteOrder, &seq); err != nil {
-			return nil, err
-		} else {
-			message.Seq = int32(seq)
-		}
-	case 2:
-		var seq int16
-		if err = binary.Read(reader, p.opts.byteOrder, &seq); err != nil {
-			return nil, err
-		} else {
-			message.Seq = int32(seq)
-		}
-	case 4:
-		var seq int32
-		if err = binary.Read(reader, p.opts.byteOrder, &seq); err != nil {
-			return nil, err
-		} else {
-			message.Seq = seq
-		}
+	seq, err := p.readSeq(reader)
+	if err != nil {
+		return nil, err
 	}
 
-	message.Buffer = data[ln:]
-
-	return message, nil
+	return &Message{
+		Route:  route,
+		Seq:    seq,
+		Buffer: data[ln:],
+	}, nil
 }
 
 // PackHeartbeat 打包心跳
 func (p *defaultPacker) PackHeartbeat() ([]byte, error) {
 	if p.opts.heartbeatTime {
-		var (
-			buf  = &bytes.Buffer{}
-			size = defaultHeaderBytes + defaultHeartbeatTimeBytes
-		)
+		buf := p.getBuffer()
+		defer p.putBuffer(buf)
 
+		size := defaultHeaderBytes + defaultHeartbeatTimeBytes
 		buf.Grow(defaultSizeBytes + size)
 
 		if err := binary.Write(buf, p.opts.byteOrder, uint32(size)); err != nil {
@@ -381,10 +295,13 @@ func (p *defaultPacker) PackHeartbeat() ([]byte, error) {
 			return nil, err
 		}
 
-		return buf.Bytes(), nil
-	} else {
-		return p.heartbeat, nil
+		result := make([]byte, buf.Len())
+		copy(result, buf.Bytes())
+
+		return result, nil
 	}
+
+	return p.heartbeat, nil
 }
 
 // CheckHeartbeat 检测心跳包
@@ -393,12 +310,9 @@ func (p *defaultPacker) CheckHeartbeat(data []byte) (bool, error) {
 		return false, errors.ErrInvalidMessage
 	}
 
-	var (
-		size   uint32
-		header uint8
-		reader = bytes.NewReader(data)
-	)
+	reader := bytes.NewReader(data)
 
+	var size uint32
 	if err := binary.Read(reader, p.opts.byteOrder, &size); err != nil {
 		return false, err
 	}
@@ -407,6 +321,7 @@ func (p *defaultPacker) CheckHeartbeat(data []byte) (bool, error) {
 		return false, errors.ErrInvalidMessage
 	}
 
+	var header uint8
 	if err := binary.Read(reader, p.opts.byteOrder, &header); err != nil {
 		return false, err
 	}
@@ -414,7 +329,148 @@ func (p *defaultPacker) CheckHeartbeat(data []byte) (bool, error) {
 	return header&heartbeatBit == heartbeatBit, nil
 }
 
-// 构建心跳包
+// ==================== 私有方法 ====================
+
+// validateMessage 校验消息
+func (p *defaultPacker) validateMessage(message *Message) error {
+	// 校验路由范围
+	maxRoute := int32(1<<(8*p.opts.routeBytes-1) - 1)
+	minRoute := int32(-1 << (8*p.opts.routeBytes - 1))
+	if message.Route > maxRoute || message.Route < minRoute {
+		return errors.ErrRouteOverflow
+	}
+
+	// 校验序列号范围
+	if p.opts.seqBytes > 0 {
+		maxSeq := int32(1<<(8*p.opts.seqBytes-1) - 1)
+		minSeq := int32(-1 << (8*p.opts.seqBytes - 1))
+		if message.Seq > maxSeq || message.Seq < minSeq {
+			return errors.ErrSeqOverflow
+		}
+	}
+
+	// 校验消息大小
+	if len(message.Buffer) > p.opts.bufferBytes {
+		return errors.ErrMessageTooLarge
+	}
+
+	return nil
+}
+
+// writeRouteToWriter 写路由到 buffer.Writer
+func (p *defaultPacker) writeRouteToWriter(writer *buffer.Writer, route int32) {
+	switch p.opts.routeBytes {
+	case 1:
+		writer.WriteInt8s(int8(route))
+	case 2:
+		writer.WriteInt16s(p.opts.byteOrder, int16(route))
+	case 4:
+		writer.WriteInt32s(p.opts.byteOrder, route)
+	}
+}
+
+// writeSeqToWriter 写序列号到 buffer.Writer
+func (p *defaultPacker) writeSeqToWriter(writer *buffer.Writer, seq int32) {
+	switch p.opts.seqBytes {
+	case 1:
+		writer.WriteInt8s(int8(seq))
+	case 2:
+		writer.WriteInt16s(p.opts.byteOrder, int16(seq))
+	case 4:
+		writer.WriteInt32s(p.opts.byteOrder, seq)
+	}
+}
+
+// writeRouteToBuf 写路由到 bytes.Buffer
+func (p *defaultPacker) writeRouteToBuf(buf *bytes.Buffer, route int32) error {
+	switch p.opts.routeBytes {
+	case 1:
+		return binary.Write(buf, p.opts.byteOrder, int8(route))
+	case 2:
+		return binary.Write(buf, p.opts.byteOrder, int16(route))
+	case 4:
+		return binary.Write(buf, p.opts.byteOrder, route)
+	}
+	return nil
+}
+
+// writeSeqToBuf 写序列号到 bytes.Buffer
+func (p *defaultPacker) writeSeqToBuf(buf *bytes.Buffer, seq int32) error {
+	switch p.opts.seqBytes {
+	case 1:
+		return binary.Write(buf, p.opts.byteOrder, int8(seq))
+	case 2:
+		return binary.Write(buf, p.opts.byteOrder, int16(seq))
+	case 4:
+		return binary.Write(buf, p.opts.byteOrder, seq)
+	}
+	return nil
+}
+
+// readRoute 从 reader 读取路由
+func (p *defaultPacker) readRoute(reader *bytes.Reader) (int32, error) {
+	switch p.opts.routeBytes {
+	case 1:
+		var route int8
+		if err := binary.Read(reader, p.opts.byteOrder, &route); err != nil {
+			return 0, err
+		}
+		return int32(route), nil
+	case 2:
+		var route int16
+		if err := binary.Read(reader, p.opts.byteOrder, &route); err != nil {
+			return 0, err
+		}
+		return int32(route), nil
+	case 4:
+		var route int32
+		if err := binary.Read(reader, p.opts.byteOrder, &route); err != nil {
+			return 0, err
+		}
+		return route, nil
+	}
+	return 0, nil
+}
+
+// readSeq 从 reader 读取序列号
+func (p *defaultPacker) readSeq(reader *bytes.Reader) (int32, error) {
+	switch p.opts.seqBytes {
+	case 0:
+		return 0, nil
+	case 1:
+		var seq int8
+		if err := binary.Read(reader, p.opts.byteOrder, &seq); err != nil {
+			return 0, err
+		}
+		return int32(seq), nil
+	case 2:
+		var seq int16
+		if err := binary.Read(reader, p.opts.byteOrder, &seq); err != nil {
+			return 0, err
+		}
+		return int32(seq), nil
+	case 4:
+		var seq int32
+		if err := binary.Read(reader, p.opts.byteOrder, &seq); err != nil {
+			return 0, err
+		}
+		return seq, nil
+	}
+	return 0, nil
+}
+
+// getBuffer 从池中获取 buffer
+func (p *defaultPacker) getBuffer() *bytes.Buffer {
+	return p.bufferPool.Get().(*bytes.Buffer)
+}
+
+// putBuffer 将 buffer 放回池中
+func (p *defaultPacker) putBuffer(buf *bytes.Buffer) {
+	buf.Reset()
+	p.bufferPool.Put(buf)
+}
+
+// makeHeartbeat 构建心跳包
 func makeHeartbeat(byteOrder binary.ByteOrder) []byte {
 	buf := bytes.NewBuffer(nil)
 	buf.Grow(defaultSizeBytes + defaultHeaderBytes)
