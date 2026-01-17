@@ -54,22 +54,23 @@ type defaultPacker struct {
 	bufferPool sync.Pool // 复用 bytes.Buffer
 }
 
-func NewPacker(opts ...Option) *defaultPacker {
+// NewPacker 创建一个新的消息打包器
+func NewPacker(opts ...Option) (*defaultPacker, error) {
 	o := defaultOptions()
 	for _, opt := range opts {
 		opt(o)
 	}
 
 	if o.routeBytes != 1 && o.routeBytes != 2 && o.routeBytes != 4 {
-		log.Fatalf("the number of route bytes must be 1、2、4, and give %d", o.routeBytes)
+		return nil, errors.NewError("the number of route bytes must be 1, 2, or 4")
 	}
 
 	if o.seqBytes != 0 && o.seqBytes != 1 && o.seqBytes != 2 && o.seqBytes != 4 {
-		log.Fatalf("the number of seq bytes must be 0、1、2、4, and give %d", o.seqBytes)
+		return nil, errors.NewError("the number of seq bytes must be 0, 1, 2, or 4")
 	}
 
 	if o.bufferBytes < 0 {
-		log.Fatalf("the number of buffer bytes must be greater than or equal to 0, and give %d", o.bufferBytes)
+		return nil, errors.NewError("the number of buffer bytes must be greater than or equal to 0")
 	}
 
 	return &defaultPacker{
@@ -80,7 +81,16 @@ func NewPacker(opts ...Option) *defaultPacker {
 				return bytes.NewBuffer(make([]byte, 0, defaultSizeBytes+defaultHeaderBytes+o.routeBytes+o.seqBytes+256))
 			},
 		},
+	}, nil
+}
+
+// MustNewPacker 创建一个新的消息打包器，失败时 panic
+func MustNewPacker(opts ...Option) *defaultPacker {
+	p, err := NewPacker(opts...)
+	if err != nil {
+		log.Fatalf("create packer failed: %v", err)
 	}
+	return p
 }
 
 // ReadBuffer 以buffer的形式读取消息

@@ -12,7 +12,6 @@ import (
 	"github.com/dawnsgo/dawn/internal/dispatcher"
 	"github.com/dawnsgo/dawn/internal/transporter/node"
 	"github.com/dawnsgo/dawn/locate"
-	"github.com/dawnsgo/dawn/log"
 	"github.com/dawnsgo/dawn/packet"
 	"github.com/dawnsgo/dawn/registry"
 	"golang.org/x/sync/errgroup"
@@ -411,16 +410,16 @@ func (l *NodeLinker) doLoadSource(uid int64, name string) (string, bool) {
 }
 
 // WatchUserLocate 监听用户定位
-func (l *NodeLinker) WatchUserLocate() {
+func (l *NodeLinker) WatchUserLocate() error {
 	if l.opts.Locator == nil {
-		return
+		return nil
 	}
 
 	ctx, cancel := context.WithTimeout(l.ctx, 3*time.Second)
 	watcher, err := l.opts.Locator.Watch(ctx, cluster.Node.String())
 	cancel()
 	if err != nil {
-		log.Fatalf("user locate event watch failed: %v", err)
+		return errors.NewError(err, "user locate event watch failed")
 	}
 
 	go func() {
@@ -450,15 +449,17 @@ func (l *NodeLinker) WatchUserLocate() {
 			}
 		}
 	}()
+
+	return nil
 }
 
 // WatchClusterInstance 监听集群实例
-func (l *NodeLinker) WatchClusterInstance() {
+func (l *NodeLinker) WatchClusterInstance() error {
 	ctx, cancel := context.WithTimeout(l.ctx, 3*time.Second)
 	watcher, err := l.opts.Registry.Watch(ctx, cluster.Node.String())
 	cancel()
 	if err != nil {
-		log.Fatalf("the cluster instance watch failed: %v", err)
+		return errors.NewError(err, "the cluster instance watch failed")
 	}
 
 	go func() {
@@ -479,4 +480,6 @@ func (l *NodeLinker) WatchClusterInstance() {
 			l.dispatcher.ReplaceServices(services...)
 		}
 	}()
+
+	return nil
 }

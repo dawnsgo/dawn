@@ -2,12 +2,14 @@ package pprof
 
 import (
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
+
 	"github.com/dawnsgo/dawn/component"
 	"github.com/dawnsgo/dawn/core/info"
 	xnet "github.com/dawnsgo/dawn/core/net"
+	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/log"
-	"net/http"
-	_ "net/http/pprof"
 )
 
 var _ component.Component = &PProf{}
@@ -30,19 +32,21 @@ func (*PProf) Name() string {
 	return "pprof"
 }
 
-func (p *PProf) Start() {
+func (p *PProf) Start() error {
 	listenAddr, exposeAddr, err := xnet.ParseAddr(p.opts.addr)
 	if err != nil {
-		log.Fatalf("pprof addr parse failed: %v", err)
+		return errors.NewError(err, "pprof addr parse failed")
 	}
 
 	go func() {
 		if err := http.ListenAndServe(listenAddr, nil); err != nil {
-			log.Fatalf("pprof server start failed: %v", err)
+			log.Errorf("pprof server start failed: %v", err)
 		}
 	}()
 
 	info.PrintBoxInfo("PProf",
 		fmt.Sprintf("Url: http://%s/debug/pprof/", exposeAddr),
 	)
+
+	return nil
 }

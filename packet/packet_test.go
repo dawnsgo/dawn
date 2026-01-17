@@ -8,7 +8,7 @@ import (
 	"github.com/dawnsgo/dawn/utils/xrand"
 )
 
-var packer = packet.NewPacker(
+var packer = packet.MustNewPacker(
 	packet.WithHeartbeatTime(true),
 )
 

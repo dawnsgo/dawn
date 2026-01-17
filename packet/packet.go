@@ -9,7 +9,7 @@ import (
 var globalPacker Packer
 
 func init() {
-	globalPacker = NewPacker()
+	globalPacker = MustNewPacker()
 }
 
 // SetPacker 设置打包器

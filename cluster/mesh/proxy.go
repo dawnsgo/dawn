@@ -211,12 +211,22 @@ func (p *Proxy) Deliver(ctx context.Context, args *cluster.DeliverArgs) error {
 }
 
 // 开始监听
-func (p *Proxy) watch() {
-	p.gateLinker.WatchUserLocate()
+func (p *Proxy) watch() error {
+	if err := p.gateLinker.WatchUserLocate(); err != nil {
+		return err
+	}
 
-	p.gateLinker.WatchClusterInstance()
+	if err := p.gateLinker.WatchClusterInstance(); err != nil {
+		return err
+	}
 
-	p.nodeLinker.WatchUserLocate()
+	if err := p.nodeLinker.WatchUserLocate(); err != nil {
+		return err
+	}
 
-	p.nodeLinker.WatchClusterInstance()
+	if err := p.nodeLinker.WatchClusterInstance(); err != nil {
+		return err
+	}
+
+	return nil
 }

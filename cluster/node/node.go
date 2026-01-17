@@ -9,6 +9,7 @@ import (
 	"github.com/dawnsgo/dawn/cluster"
 	"github.com/dawnsgo/dawn/component"
 	"github.com/dawnsgo/dawn/core/info"
+	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/internal/transporter/node"
 	"github.com/dawnsgo/dawn/log"
 	"github.com/dawnsgo/dawn/registry"
@@ -91,56 +92,68 @@ func (n *Node) Name() string {
 }
 
 // Init 初始化节点
-func (n *Node) Init() {
+func (n *Node) Init() error {
 	if n.opts.id == "" {
-		log.Fatal("instance id can not be empty")
+		return errors.NewError("instance id can not be empty")
 	}
 
 	if n.opts.name == "" {
-		log.Fatal("instance name can not be empty")
+		return errors.NewError("instance name can not be empty")
 	}
 
 	if n.opts.codec == nil {
-		log.Fatal("codec component is not injected")
+		return errors.NewError("codec component is not injected")
 	}
 
 	if n.opts.locator == nil {
-		log.Fatal("locator component is not injected")
+		return errors.NewError("locator component is not injected")
 	}
 
 	if n.opts.registry == nil {
-		log.Fatal("registry component is not injected")
+		return errors.NewError("registry component is not injected")
 	}
 
 	n.runHookFunc(cluster.Init)
+
+	return nil
 }
 
 // Start 启动节点
-func (n *Node) Start() {
+func (n *Node) Start() error {
 	if !n.state.CompareAndSwap(int32(cluster.Shut), int32(cluster.Work)) {
-		return
+		return nil
 	}
 
-	n.startLinkServer()
+	if err := n.startLinkServer(); err != nil {
+		return err
+	}
 
-	n.startTransportServer()
+	if err := n.startTransportServer(); err != nil {
+		return err
+	}
 
-	n.registerServiceInstances()
+	if err := n.registerServiceInstances(); err != nil {
+		return err
+	}
 
-	n.proxy.watch()
+	if err := n.proxy.watch(); err != nil {
+		return err
+	}
 
 	go n.dispatch()
 
 	n.printInfo()
 
 	n.runHookFunc(cluster.Start)
+
+	return nil
 }
 
 // Close 关闭节点
-func (n *Node) Close() {
+func (n *Node) Close() error {
 	if !n.state.CompareAndSwap(int32(cluster.Work), int32(cluster.Hang)) {
 		if !n.state.CompareAndSwap(int32(cluster.Busy), int32(cluster.Hang)) {
-			return
+			return nil
 		}
 	}
 
@@ -149,12 +162,14 @@ func (n *Node) Close() {
 	n.runHookFunc(cluster.Close)
 
 	n.wg.Wait()
+
+	return nil
 }
 
 // Destroy 销毁节点服务器
-func (n *Node) Destroy() {
+func (n *Node) Destroy() error {
 	if !n.state.CompareAndSwap(int32(cluster.Hang), int32(cluster.Shut)) {
-		return
+		return nil
 	}
 
 	n.runHookFunc(cluster.Destroy)
@@ -172,6 +187,8 @@ func (n *Node) Destroy() {
 	close(n.fnChan)
 
 	n.cancel()
+
+	return nil
 }
 
 // Proxy 获取节点代理
@@ -208,22 +225,24 @@ func (n *Node) dispatch() {
 }
 
 // 启动连接服务器
-func (n *Node) startLinkServer() {
+func (n *Node) startLinkServer() error {
 	linker, err := node.NewServer(&provider{node: n}, &node.ServerOptions{
 		Addr:   n.opts.addr,
 		Expose: n.opts.expose,
 	})
 	if err != nil {
-		log.Fatalf("link server create failed: %v", err)
+		return errors.NewError(err, "link server create failed")
 	}
 
 	n.linker = linker
 
 	go func() {
 		if err = n.linker.Start(); err != nil {
-			log.Fatalf("link server start failed: %v", err)
+			log.Errorf("link server start failed: %v", err)
 		}
 	}()
+
+	return nil
 }
 
 // 停止连接服务器
@@ -234,35 +253,37 @@ func (n *Node) stopLinkServer() {
 }
 
 // 启动传输服务器
-func (n *Node) startTransportServer() {
+func (n *Node) startTransportServer() error {
 	if n.opts.transporter == nil {
-		return
+		return nil
 	}
 
 	n.opts.transporter.SetDefaultDiscovery(n.opts.registry)
 
 	if len(n.services) == 0 {
-		return
+		return nil
 	}
 
 	transporter, err := n.opts.transporter.NewServer()
 	if err != nil {
-		log.Fatalf("transport server create failed: %v", err)
+		return errors.NewError(err, "transport server create failed")
 	}
 
 	n.transporter = transporter
 
 	for _, entity := range n.services {
 		if err = n.transporter.RegisterService(entity.desc, entity.provider); err != nil {
-			log.Fatalf("register service failed: %v", err)
+			return errors.NewError(err, "register service failed")
 		}
 	}
 
 	go func() {
 		if err = n.transporter.Start(); err != nil {
-			log.Fatalf("transport server start failed: %v", err)
+			log.Errorf("transport server start failed: %v", err)
 		}
 	}()
+
+	return nil
 }
 
 // 停止传输服务器
@@ -277,7 +298,7 @@ func (n *Node) stopTransportServer() {
 }
 
 // 注册服务实例
-func (n *Node) registerServiceInstances() {
+func (n *Node) registerServiceInstances() error {
 	routes := make([]registry.Route, 0, len(n.router.routes))
 	events := make([]int, 0, len(n.trigger.events))
 
@@ -327,8 +348,10 @@ func (n *Node) registerServiceInstances() {
 	}
 
 	if err := n.doRegisterServiceInstances(); err != nil {
-		log.Fatalf("register cluster instances failed: %v", err)
+		return errors.NewError(err, "register cluster instances failed")
 	}
+
+	return nil
 }
 
 // 刷新服务实例状态

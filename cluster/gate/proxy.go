@@ -99,8 +99,14 @@ func (p *proxy) deliver(ctx context.Context, cid, uid int64, buf buffer.Buffer) 
 }
 
 // 开始监听
-func (p *proxy) watch() {
-	p.nodeLinker.WatchUserLocate()
+func (p *proxy) watch() error {
+	if err := p.nodeLinker.WatchUserLocate(); err != nil {
+		return err
+	}
 
-	p.nodeLinker.WatchClusterInstance()
+	if err := p.nodeLinker.WatchClusterInstance(); err != nil {
+		return err
+	}
+
+	return nil
 }

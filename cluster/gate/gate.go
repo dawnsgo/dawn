@@ -18,6 +18,7 @@ import (
 	"github.com/dawnsgo/dawn/core/buffer"
 	"github.com/dawnsgo/dawn/core/info"
 	"github.com/dawnsgo/dawn/core/net"
+	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/internal/transporter/gate"
 	"github.com/dawnsgo/dawn/log"
 	"github.com/dawnsgo/dawn/network"
@@ -61,58 +62,72 @@ func (g *Gate) Name() string {
 }
 
 // Init 初始化
-func (g *Gate) Init() {
+func (g *Gate) Init() error {
 	if g.opts.id == "" {
-		log.Fatal("instance id can not be empty")
+		return errors.NewError("instance id can not be empty")
 	}
 
 	if g.opts.server == nil {
-		log.Fatal("server component is not injected")
+		return errors.NewError("server component is not injected")
 	}
 
 	if g.opts.locator == nil {
-		log.Fatal("locator component is not injected")
+		return errors.NewError("locator component is not injected")
 	}
 
 	if g.opts.registry == nil {
-		log.Fatal("registry component is not injected")
+		return errors.NewError("registry component is not injected")
 	}
+
+	return nil
 }
 
 // Start 启动组件
-func (g *Gate) Start() {
+func (g *Gate) Start() error {
 	if !g.state.CompareAndSwap(int32(cluster.Shut), int32(cluster.Work)) {
-		return
+		return nil
 	}
 
-	g.startNetworkServer()
+	if err := g.startNetworkServer(); err != nil {
+		return err
+	}
 
-	g.startLinkerServer()
+	if err := g.startLinkerServer(); err != nil {
+		return err
+	}
 
-	g.registerServiceInstance()
+	if err := g.registerServiceInstance(); err != nil {
+		return err
+	}
 
-	g.proxy.watch()
+	if err := g.proxy.watch(); err != nil {
+		return err
+	}
 
 	g.printInfo()
+
+	return nil
 }
 
 // Close 关闭节点
-func (g *Gate) Close() {
+func (g *Gate) Close() error {
 	if !g.state.CompareAndSwap(int32(cluster.Work), int32(cluster.Hang)) {
 		if !g.state.CompareAndSwap(int32(cluster.Busy), int32(cluster.Hang)) {
-			return
+			return nil
 		}
 	}
 
 	g.refreshServiceInstance()
 
 	g.wg.Wait()
+
+	return nil
 }
 
 // Destroy 销毁组件
-func (g *Gate) Destroy() {
+func (g *Gate) Destroy() error {
 	if !g.state.CompareAndSwap(int32(cluster.Hang), int32(cluster.Shut)) {
-		return
+		return nil
 	}
 
 	g.deregisterServiceInstance()
@@ -122,17 +137,21 @@ func (g *Gate) Destroy() {
 	g.stopLinkerServer()
 
 	g.cancel()
+
+	return nil
 }
 
 // 启动网络服务器
-func (g *Gate) startNetworkServer() {
+func (g *Gate) startNetworkServer() error {
 	g.opts.server.OnConnect(g.handleConnect)
 	g.opts.server.OnDisconnect(g.handleDisconnect)
 	g.opts.server.OnReceive(g.handleReceive)
 
 	if err := g.opts.server.Start(); err != nil {
-		log.Fatalf("network server start failed: %v", err)
+		return errors.NewError(err, "network server start failed")
 	}
+
+	return nil
 }
 
 // 停止网关服务器
@@ -182,13 +201,13 @@ func (g *Gate) handleReceive(conn network.Conn, buf buffer.Buffer) {
 }
 
 // 启动传输服务器
-func (g *Gate) startLinkerServer() {
+func (g *Gate) startLinkerServer() error {
 	transporter, err := gate.NewServer(&provider{gate: g}, &gate.ServerOptions{
 		Addr:   g.opts.addr,
 		Expose: g.opts.expose,
 	})
 	if err != nil {
-		log.Fatalf("link server create failed: %v", err)
+		return errors.NewError(err, "link server create failed")
 	}
 
 	g.linker = transporter
@@ -198,6 +217,8 @@ func (g *Gate) startLinkerServer() {
 			log.Errorf("link server start failed: %v", err)
 		}
 	}()
+
+	return nil
 }
 
 // 停止传输服务器
@@ -208,7 +229,7 @@ func (g *Gate) stopLinkerServer() {
 }
 
 // 注册服务实例
-func (g *Gate) registerServiceInstance() {
+func (g *Gate) registerServiceInstance() error {
 	g.instance = &registry.ServiceInstance{
 		ID:       g.opts.id,
 		Name:     cluster.Gate.String(),
@@ -223,8 +244,10 @@ func (g *Gate) registerServiceInstance() {
 	defer cancel()
 
 	if err := g.opts.registry.Register(ctx, g.instance); err != nil {
-		log.Fatalf("register cluster instance failed: %v", err)
+		return errors.NewError(err, "register cluster instance failed")
 	}
+
+	return nil
 }
 
 // 刷新服务实例状态
@@ -239,7 +262,7 @@ func (g *Gate) refreshServiceInstance() {
 	defer cancel()
 
 	if err := g.opts.registry.Register(ctx, g.instance); err != nil {
-		log.Fatalf("refresh cluster instance failed: %v", err)
+		log.Errorf("refresh cluster instance failed: %v", err)
 	}
 }
 

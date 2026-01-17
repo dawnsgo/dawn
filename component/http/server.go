@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dawnsgo/dawn/component/http/swagger"
 	"github.com/dawnsgo/dawn/component"
+	"github.com/dawnsgo/dawn/component/http/swagger"
 	"github.com/dawnsgo/dawn/core/info"
 	xnet "github.com/dawnsgo/dawn/core/net"
 	"github.com/dawnsgo/dawn/errors"
@@ -90,7 +90,9 @@ func (s *Server) Name() string {
 }
 
 // Init 初始化组件
-func (s *Server) Init() {}
+func (s *Server) Init() error {
+	return nil
+}
 
 // Proxy 获取HTTP代理API
 func (s *Server) Proxy() *Proxy {
@@ -98,10 +100,10 @@ func (s *Server) Proxy() *Proxy {
 }
 
 // Start 启动组件
-func (s *Server) Start() {
+func (s *Server) Start() error {
 	listenAddr, exposeAddr, err := xnet.ParseAddr(s.opts.addr)
 	if err != nil {
-		log.Fatalf("http addr parse failed: %v", err)
+		return errors.NewError(err, "http addr parse failed")
 	}
 
 	if s.opts.transporter != nil && s.opts.registry != nil {
@@ -116,9 +118,11 @@ func (s *Server) Start() {
 			CertKeyFile:           s.opts.keyFile,
 			DisableStartupMessage: true,
 		}); err != nil {
-			log.Fatalf("http server startup failed: %v", errors.Unwrap(errors.Unwrap(err)))
+			log.Errorf("http server startup failed: %v", errors.Unwrap(errors.Unwrap(err)))
 		}
 	}()
+
+	return nil
 }
 
 func (s *Server) printInfo(addr string) {

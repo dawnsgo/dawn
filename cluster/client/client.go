@@ -62,20 +62,22 @@ func (c *Client) Name() string {
 }
 
 // Init 初始化节点
-func (c *Client) Init() {
+func (c *Client) Init() error {
 	if c.opts.client == nil {
-		log.Fatal("client plugin is not injected")
+		return errors.NewError("client plugin is not injected")
 	}
 
 	if c.opts.codec == nil {
-		log.Fatal("codec plugin is not injected")
+		return errors.NewError("codec plugin is not injected")
 	}
 
 	c.runHookFunc(cluster.Init)
+
+	return nil
 }
 
 // Start 启动组件
-func (c *Client) Start() {
+func (c *Client) Start() error {
 	c.setState(cluster.Work)
 
 	c.opts.client.OnDisconnect(c.handleDisconnect)
@@ -84,13 +86,22 @@ func (c *Client) Start() {
 	c.printInfo()
 
 	c.runHookFunc(cluster.Start)
+
+	return nil
+}
+
+// Close 关闭组件
+func (c *Client) Close() error {
+	return nil
 }
 
 // Destroy 销毁组件
-func (c *Client) Destroy() {
+func (c *Client) Destroy() error {
 	c.setState(cluster.Shut)
 
 	c.runHookFunc(cluster.Destroy)
+
+	return nil
 }
 
 // Proxy 获取节点代理

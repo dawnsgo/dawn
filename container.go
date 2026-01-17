@@ -72,9 +72,13 @@ func (c *Container) Serve(once ...bool) {
 
 	c.doPrintFrameworkInfo()
 
-	c.doInitComponents()
+	if err := c.doInitComponents(); err != nil {
+		log.Fatalf("init components failed: %v", err)
+	}
 
-	c.doStartComponents()
+	if err := c.doStartComponents(); err != nil {
+		log.Fatalf("start components failed: %v", err)
+	}
 
 	if len(once) == 0 || !once[0] {
 		c.doWaitSystemSignal()
@@ -88,17 +92,23 @@ func (c *Container) Serve(once ...bool) {
 }
 
 // 初始化所有组件
-func (c *Container) doInitComponents() {
+func (c *Container) doInitComponents() error {
 	for _, comp := range c.components {
-		comp.Init()
+		if err := comp.Init(); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // 启动所有组件
-func (c *Container) doStartComponents() {
+func (c *Container) doStartComponents() error {
 	for _, comp := range c.components {
-		comp.Start()
+		if err := comp.Start(); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // 关闭所有组件
@@ -106,7 +116,12 @@ func (c *Container) doCloseComponents() {
 	g := xcall.NewGoroutines()
 
 	for _, comp := range c.components {
-		g.Add(comp.Close)
+		comp := comp // 避免闭包捕获问题
+		g.Add(func() {
+			if err := comp.Close(); err != nil {
+				log.Warnf("close component [%s] failed: %v", comp.Name(), err)
+			}
+		})
 	}
 
 	g.Run(context.Background(), etc.Get(defaultShutdownMaxWaitTimeKey).Duration())
@@ -117,7 +132,12 @@ func (c *Container) doDestroyComponents() {
 	g := xcall.NewGoroutines()
 
 	for _, comp := range c.components {
-		g.Add(comp.Destroy)
+		comp := comp // 避免闭包捕获问题
+		g.Add(func() {
+			if err := comp.Destroy(); err != nil {
+				log.Warnf("destroy component [%s] failed: %v", comp.Name(), err)
+			}
+		})
 	}
 
 	g.Run(context.Background(), 5*time.Second)

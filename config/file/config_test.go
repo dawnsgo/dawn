@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	source := file.NewSource(file.WithMode(config.ReadWrite))
+	source := file.MustNewSource(file.WithMode(config.ReadWrite))
 	config.SetConfigurator(config.NewConfigurator(config.WithSources(source)))
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/dawnsgo/dawn/cluster"
 	"github.com/dawnsgo/dawn/component"
 	"github.com/dawnsgo/dawn/core/info"
+	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/log"
 	"github.com/dawnsgo/dawn/registry"
 	"github.com/dawnsgo/dawn/transport"
@@ -60,56 +61,68 @@ func (m *Mesh) Name() string {
 }
 
 // Init 初始化节点
-func (m *Mesh) Init() {
+func (m *Mesh) Init() error {
 	if m.opts.codec == nil {
-		log.Fatal("codec component is not injected")
+		return errors.NewError("codec component is not injected")
 	}
 
 	if m.opts.registry == nil {
-		log.Fatal("registry component is not injected")
+		return errors.NewError("registry component is not injected")
 	}
 
 	if m.opts.transporter == nil {
-		log.Fatal("transporter component is not injected")
+		return errors.NewError("transporter component is not injected")
 	}
 
 	m.runHookFunc(cluster.Init)
+
+	return nil
 }
 
 // Start 启动
-func (m *Mesh) Start() {
+func (m *Mesh) Start() error {
 	if m.state.Swap(int32(cluster.Work)) != int32(cluster.Shut) {
-		return
+		return nil
 	}
 
-	m.startTransportServer()
+	if err := m.startTransportServer(); err != nil {
+		return err
+	}
 
-	m.registerServiceInstance()
+	if err := m.registerServiceInstance(); err != nil {
+		return err
+	}
 
-	m.proxy.watch()
+	if err := m.proxy.watch(); err != nil {
+		return err
+	}
 
 	m.printInfo()
 
 	m.runHookFunc(cluster.Start)
+
+	return nil
 }
 
 // Close 关闭
-func (m *Mesh) Close() {
+func (m *Mesh) Close() error {
 	if !m.state.CompareAndSwap(int32(cluster.Work), int32(cluster.Hang)) {
 		if !m.state.CompareAndSwap(int32(cluster.Busy), int32(cluster.Hang)) {
-			return
+			return nil
 		}
 	}
 
 	m.refreshServiceInstance()
 
 	m.runHookFunc(cluster.Close)
+
+	return nil
 }
 
 // Destroy 销毁
-func (m *Mesh) Destroy() {
+func (m *Mesh) Destroy() error {
 	if m.state.Swap(int32(cluster.Shut)) == int32(cluster.Shut) {
-		return
+		return nil
 	}
 
 	m.runHookFunc(cluster.Destroy)
@@ -119,6 +132,8 @@ func (m *Mesh) Destroy() {
 	m.stopTransportServer()
 
 	m.cancel()
+
+	return nil
 }
 
 // Proxy 获取节点代理
@@ -127,27 +142,29 @@ func (m *Mesh) Proxy() *Proxy {
 }
 
 // 启动传输服务器
-func (m *Mesh) startTransportServer() {
+func (m *Mesh) startTransportServer() error {
 	m.opts.transporter.SetDefaultDiscovery(m.opts.registry)
 
 	transporter, err := m.opts.transporter.NewServer()
 	if err != nil {
-		log.Fatalf("transport server create failed: %v", err)
+		return errors.NewError(err, "transport server create failed")
 	}
 
 	m.transporter = transporter
 
 	for _, entity := range m.services {
 		if err = m.transporter.RegisterService(entity.desc, entity.provider); err != nil {
-			log.Fatalf("register service failed: %v", err)
+			return errors.NewError(err, "register service failed")
 		}
 	}
 
 	go func() {
 		if err = m.transporter.Start(); err != nil {
-			log.Fatalf("transport server start failed: %v", err)
+			log.Errorf("transport server start failed: %v", err)
 		}
 	}()
+
+	return nil
 }
 
 // 停止传输服务器
@@ -158,7 +175,7 @@ func (m *Mesh) stopTransportServer() {
 }
 
 // 注册服务实例
-func (m *Mesh) registerServiceInstance() {
+func (m *Mesh) registerServiceInstance() error {
 	m.instance = &registry.ServiceInstance{
 		ID:       m.opts.id,
 		Name:     cluster.Mesh.String(),
@@ -178,8 +195,10 @@ func (m *Mesh) registerServiceInstance() {
 	defer cancel()
 
 	if err := m.opts.registry.Register(ctx, m.instance); err != nil {
-		log.Fatalf("register cluster instance failed: %v", err)
+		return errors.NewError(err, "register cluster instance failed")
 	}
+
+	return nil
 }
 
 // 刷新服务实例状态
@@ -194,7 +213,7 @@ func (m *Mesh) refreshServiceInstance() {
 	defer cancel()
 
 	if err := m.opts.registry.Register(ctx, m.instance); err != nil {
-		log.Fatalf("refresh cluster instance failed: %v", err)
+		log.Errorf("refresh cluster instance failed: %v", err)
 	}
 }
 
