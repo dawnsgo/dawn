@@ -27,13 +27,38 @@ const (
 	defaultShutdownMaxWaitTimeKey = "etc.shutdownMaxWaitTime" // 容器关闭最大等待时间
 )
 
+// Container 服务容器
 type Container struct {
-	components []component.Component
+	ctx        *Context              // 依赖注入上下文
+	components []component.Component // 组件列表
+}
+
+// ContainerOption 容器配置选项
+type ContainerOption func(*Container)
+
+// WithContext 使用指定的上下文
+func WithContext(ctx *Context) ContainerOption {
+	return func(c *Container) {
+		c.ctx = ctx
+	}
 }
 
 // NewContainer 创建一个容器
-func NewContainer() *Container {
-	return &Container{}
+func NewContainer(opts ...ContainerOption) *Container {
+	c := &Container{
+		ctx: Default(), // 默认使用全局上下文
+	}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	return c
+}
+
+// Context 获取容器的上下文
+func (c *Container) Context() *Context {
+	return c.ctx
 }
 
 // Add 添加组件
@@ -100,7 +125,7 @@ func (c *Container) doDestroyComponents() {
 
 // 等待系统信号
 func (c *Container) doWaitSystemSignal() {
-	sig := make(chan os.Signal)
+	sig := make(chan os.Signal, 1)
 
 	switch runtime.GOOS {
 	case `windows`:
@@ -118,6 +143,12 @@ func (c *Container) doWaitSystemSignal() {
 
 // 清理所有模块
 func (c *Container) doClearModules() {
+	// 先关闭容器上下文中的资源
+	if c.ctx != nil && c.ctx != Default() {
+		c.ctx.Close()
+	}
+
+	// 然后关闭全局资源（向后兼容）
 	if err := eventbus.Close(); err != nil {
 		log.Warnf("eventbus close failed: %v", err)
 	}
