@@ -8,7 +8,6 @@ import (
 
 	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/errors"
-	"github.com/dawnsgo/dawn/log"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/adaptor"
@@ -104,10 +103,11 @@ func NewWithError(cfg Config) (fiber.Handler, error) {
 }
 
 // New 创建 Swagger 中间件（向后兼容，失败时会 panic）
+// 这是一个便捷函数，适用于初始化阶段，错误表示程序配置有误
 func New(cfg Config) fiber.Handler {
 	handler, err := NewWithError(cfg)
 	if err != nil {
-		log.Fatalf("create swagger middleware failed: %v", err)
+		panic("dawn/component/http/swagger: create swagger middleware failed: " + err.Error())
 	}
 	return handler
 }

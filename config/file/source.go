@@ -5,7 +5,6 @@ import (
 	"github.com/dawnsgo/dawn/config"
 	"github.com/dawnsgo/dawn/config/file/core"
 	"github.com/dawnsgo/dawn/errors"
-	"github.com/dawnsgo/dawn/log"
 )
 
 const Name = core.Name
@@ -29,10 +28,11 @@ func NewSource(opts ...Option) (config.Source, error) {
 }
 
 // MustNewSource 创建一个文件配置源，失败时 panic
+// 这是一个便捷函数，适用于初始化阶段，错误表示程序配置有误
 func MustNewSource(opts ...Option) config.Source {
 	s, err := NewSource(opts...)
 	if err != nil {
-		log.Fatalf("create file source failed: %v", err)
+		panic("dawn/config/file: create file source failed: " + err.Error())
 	}
 	return s
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/dawnsgo/dawn/codes"
 	"github.com/dawnsgo/dawn/core/buffer"
 	"github.com/dawnsgo/dawn/errors"
-	"github.com/dawnsgo/dawn/log"
 )
 
 const (
@@ -86,10 +85,11 @@ func NewPacker(opts ...Option) (*defaultPacker, error) {
 }
 
 // MustNewPacker 创建一个新的消息打包器，失败时 panic
+// 这是一个便捷函数，适用于初始化阶段，错误表示程序配置有误
 func MustNewPacker(opts ...Option) *defaultPacker {
 	p, err := NewPacker(opts...)
 	if err != nil {
-		log.Fatalf("create packer failed: %v", err)
+		panic("dawn/packet: create packer failed: " + err.Error())
 	}
 	return p
 }

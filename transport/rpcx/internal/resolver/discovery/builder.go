@@ -40,10 +40,12 @@ func NewBuilder(dis registry.Discovery) (*Builder, error) {
 	return b, nil
 }
 
+// MustNewBuilder 创建一个新的 Builder，失败时 panic
+// 这是一个便捷函数，适用于初始化阶段，错误表示程序配置有误
 func MustNewBuilder(dis registry.Discovery) *Builder {
 	b, err := NewBuilder(dis)
 	if err != nil {
-		log.Fatalf("init client builder failed: %v", err)
+		panic("dawn/transport/rpcx/resolver/discovery: init client builder failed: " + err.Error())
 	}
 	return b
 }
