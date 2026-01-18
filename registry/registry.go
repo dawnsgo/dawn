@@ -1,9 +1,12 @@
+// Package registry 提供服务注册发现的统一接口和实现。
+// 支持多种注册中心（etcd、consul、nacos），用于构建微服务架构。
 package registry
 
 import (
 	"context"
 )
 
+// Registry 服务注册中心接口，提供服务的注册、解注册、监听和查询功能。
 type Registry interface {
 	// Name 获取服务注册发现组件名
 	Name() string
@@ -17,6 +20,7 @@ type Registry interface {
 	Services(ctx context.Context, serviceName string) ([]*ServiceInstance, error)
 }
 
+// Discovery 服务发现接口，提供服务的监听和查询功能（不包含注册功能）。
 type Discovery interface {
 	// Watch 监听相同服务名的服务实例变化
 	Watch(ctx context.Context, serviceName string) (Watcher, error)
@@ -24,6 +28,7 @@ type Discovery interface {
 	Services(ctx context.Context, serviceName string) ([]*ServiceInstance, error)
 }
 
+// Watcher 服务监听器接口，用于监听服务实例的变化。
 type Watcher interface {
 	// Next 返回服务实例列表
 	Next() ([]*ServiceInstance, error)
@@ -31,6 +36,7 @@ type Watcher interface {
 	Stop() error
 }
 
+// ServiceInstance 服务实例结构体，表示一个微服务实例的完整信息。
 type ServiceInstance struct {
 	// 服务实体ID，每个服务实体ID唯一
 	ID string `json:"id,omitempty"`
@@ -56,6 +62,7 @@ type ServiceInstance struct {
 	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
+// Route 路由信息结构体，定义了服务路由的配置。
 type Route struct {
 	// 路由ID
 	ID int32 `json:"i,omitempty"`

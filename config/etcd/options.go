@@ -1,10 +1,5 @@
-/**
- * @Author: fuxiao
- * @Email: 576101059@qq.com
- * @Date: 2022/9/13 12:32 上午
- * @Desc: TODO
- */
-
+// Package etcd 提供基于 etcd 的配置源实现。
+// 支持从 etcd 加载配置项、监听配置变化等功能。
 package etcd
 
 import (

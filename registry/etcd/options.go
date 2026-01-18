@@ -1,10 +1,5 @@
-/**
- * @Author: fuxiao
- * @Email: 576101059@qq.com
- * @Date: 2022/9/13 12:32 上午
- * @Desc: TODO
- */
-
+// Package etcd 提供基于 etcd 的服务注册发现实现。
+// 支持服务注册、服务发现、服务监听等功能，用于构建微服务架构。
 package etcd
 
 import (

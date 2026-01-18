@@ -1,10 +1,4 @@
-/**
- * @Author: fuxiao
- * @Email: 576101059@qq.com
- * @Date: 2022/9/15 5:37 下午
- * @Desc: TODO
- */
-
+// Package etcd_test 提供 etcd 注册中心功能的测试。
 package etcd_test
 
 import (

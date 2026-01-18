@@ -1,10 +1,5 @@
-/**
- * @Author: fuxiao
- * @Email: 576101059@qq.com
- * @Date: 2022/7/7 1:31 上午
- * @Desc: TODO
- */
-
+// Package gate 提供网关组件，负责客户端连接管理和消息转发。
+// 网关组件作为客户端与服务器集群之间的入口，处理连接建立、消息路由和负载均衡。
 package gate
 
 import (

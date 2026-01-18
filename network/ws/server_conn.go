@@ -1,10 +1,5 @@
-/**
- * @Author: fuxiao
- * @Email: 576101059@qq.com
- * @Date: 2022/5/27 5:03 下午
- * @Desc: TODO
- */
-
+// Package ws 提供 WebSocket 网络协议的实现。
+// 包括 WebSocket 服务器和客户端的连接管理、消息收发等功能。
 package ws
 
 import (

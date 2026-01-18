@@ -1,10 +1,5 @@
-/**
- * @Author: fuxiao
- * @Email: 576101059@qq.com
- * @Date: 2022/11/1 12:50 上午
- * @Desc: TODO
- */
-
+// Package ecc 提供椭圆曲线加密（ECC）相关的密钥管理功能。
+// 支持密钥的生成、加载、保存和加密解密操作。
 package ecc
 
 import (

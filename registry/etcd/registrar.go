@@ -1,10 +1,3 @@
-/**
- * @Author: fuxiao
- * @Email: 576101059@qq.com
- * @Date: 2022/9/17 1:22 上午
- * @Desc: TODO
- */
-
 package etcd
 
 import (

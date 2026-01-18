@@ -1,10 +1,4 @@
-/**
- * @Author: fuxiao
- * @Email: 576101059@qq.com
- * @Date: 2022/5/29 10:59 上午
- * @Desc: TODO
- */
-
+// Package ws_test 提供 WebSocket 服务器功能的测试。
 package ws_test
 
 import (

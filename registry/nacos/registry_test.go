@@ -1,10 +1,4 @@
-/**
- * @Author: fuxiao
- * @Email: 576101059@qq.com
- * @Date: 2022/9/15 5:37 下午
- * @Desc: TODO
- */
-
+// Package nacos_test 提供 Nacos 注册中心功能的测试。
 package nacos_test
 
 import (

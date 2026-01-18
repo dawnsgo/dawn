@@ -1,10 +1,5 @@
-/**
- * @Author: fuxiao
- * @Email: 576101059@qq.com
- * @Date: 2022/6/19 12:20 下午
- * @Desc: TODO
- */
-
+// Package node 提供节点组件，负责业务逻辑处理和消息路由。
+// 节点组件是分布式游戏服务器的核心业务处理单元，处理客户端请求并协调集群通信。
 package node
 
 import (
