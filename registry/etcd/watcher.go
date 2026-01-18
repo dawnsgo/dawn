@@ -2,7 +2,7 @@
  * @Author: fuxiao
  * @Email: 576101059@qq.com
  * @Date: 2022/9/16 10:26 下午
- * @Desc: TODO
+ * @Desc: etcd注册中心的服务监听器实现，负责监听服务实例的变化并通知订阅者
  */
 
 package etcd

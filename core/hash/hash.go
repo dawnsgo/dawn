@@ -2,7 +2,7 @@
  * @Author: fuxiao
  * @Email: 576101059@qq.com
  * @Date: 2022/11/1 1:23 上午
- * @Desc: TODO
+ * @Desc: 哈希算法工具包，支持SHA1、SHA224、SHA256、SHA384、SHA512等多种哈希算法
  */
 
 package hash

@@ -2,7 +2,7 @@
  * @Author: fuxiao
  * @Email: 576101059@qq.com
  * @Date: 2022/5/14 10:42 上午
- * @Desc: TODO
+ * @Desc: JSON编解码器实现，基于sonic库提供高性能的JSON序列化和反序列化功能
  */
 
 package json

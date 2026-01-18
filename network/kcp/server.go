@@ -2,7 +2,7 @@
  * @Author: fuxiao
  * @Email: 576101059@qq.com
  * @Date: 2022/7/12 12:43 上午
- * @Desc: TODO
+ * @Desc: KCP协议服务器实现，提供基于KCP协议的网络服务器功能
  */
 
 package kcp

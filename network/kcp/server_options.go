@@ -2,7 +2,7 @@
  * @Author: fuxiao
  * @Email: 576101059@qq.com
  * @Date: 2022/7/12 12:57 上午
- * @Desc: TODO
+ * @Desc: KCP服务器配置选项，提供KCP协议相关的服务器配置参数和选项函数
  */
 
 package kcp

@@ -2,7 +2,7 @@
  * @Author: fuxiao
  * @Email: 576101059@qq.com
  * @Date: 2022/3/29 3:59 下午
- * @Desc: TODO
+ * @Desc: 网络连接接口定义，定义了连接状态、连接操作和属性管理的接口规范
  */
 
 package network
