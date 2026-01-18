@@ -21,6 +21,8 @@ import (
 const (
 	defaultPIDKey                 = "etc.pid"                 // 进程文件路径
 	defaultShutdownMaxWaitTimeKey = "etc.shutdownMaxWaitTime" // 容器关闭最大等待时间
+	defaultCloseTimeout           = 30 * time.Second          // 默认关闭超时时间
+	defaultDestroyTimeout         = 5 * time.Second           // 默认销毁超时时间
 )
 
 // ContainerError 容器错误类型
@@ -28,6 +30,7 @@ type ContainerError struct {
 	Phase     string // 错误发生的阶段: init, start, close, destroy
 	Component string // 出错的组件名称
 	Err       error  // 原始错误
+	Retryable bool   // 是否可重试
 }
 
 func (e *ContainerError) Error() string {
@@ -41,6 +44,45 @@ func (e *ContainerError) Unwrap() error {
 // ErrorHandler 错误处理器类型
 type ErrorHandler func(err error)
 
+// ErrorRecoveryStrategy 错误恢复策略
+type ErrorRecoveryStrategy int
+
+const (
+	// ErrorRecoveryNone 不进行恢复，直接失败
+	ErrorRecoveryNone ErrorRecoveryStrategy = iota
+	// ErrorRecoveryRetry 重试策略
+	ErrorRecoveryRetry
+	// ErrorRecoverySkip 跳过当前组件继续执行
+	ErrorRecoverySkip
+	// ErrorRecoveryCallback 回调自定义处理函数
+	ErrorRecoveryCallback
+)
+
+// RetryConfig 重试配置
+type RetryConfig struct {
+	MaxRetries int           // 最大重试次数
+	RetryDelay time.Duration // 重试间隔
+	Backoff    float64       // 退避系数（每次重试间隔乘以该系数）
+}
+
+// DefaultRetryConfig 默认重试配置
+func DefaultRetryConfig() *RetryConfig {
+	return &RetryConfig{
+		MaxRetries: 3,
+		RetryDelay: time.Second,
+		Backoff:    2.0,
+	}
+}
+
+// OrderedComponent 有序组件接口，支持定义组件关闭顺序
+type OrderedComponent interface {
+	component.Component
+	// Priority 返回组件优先级，数值越小优先级越高（越先关闭）
+	Priority() int
+	// Dependencies 返回依赖的组件名称列表
+	Dependencies() []string
+}
+
 // Container 服务容器
 type Container struct {
 	ctx              *Context              // 依赖注入上下文
@@ -49,6 +91,11 @@ type Container struct {
 	startedComps     []component.Component // 已启动的组件（用于回滚）
 	errorHandler     ErrorHandler          // 自定义错误处理器
 	exitOnError      bool                  // 发生错误时是否退出程序
+	closeTimeout     time.Duration         // 关闭超时时间
+	destroyTimeout   time.Duration         // 销毁超时时间
+	recoveryStrategy ErrorRecoveryStrategy // 错误恢复策略
+	retryConfig      *RetryConfig          // 重试配置
+	orderedClose     bool                  // 是否按顺序关闭组件
 }
 
 // ContainerOption 容器配置选项
@@ -75,15 +122,60 @@ func WithExitOnError(exit bool) ContainerOption {
 	}
 }
 
+// WithCloseTimeout 设置组件关闭超时时间
+func WithCloseTimeout(timeout time.Duration) ContainerOption {
+	return func(c *Container) {
+		c.closeTimeout = timeout
+	}
+}
+
+// WithDestroyTimeout 设置组件销毁超时时间
+func WithDestroyTimeout(timeout time.Duration) ContainerOption {
+	return func(c *Container) {
+		c.destroyTimeout = timeout
+	}
+}
+
+// WithErrorRecoveryStrategy 设置错误恢复策略
+func WithErrorRecoveryStrategy(strategy ErrorRecoveryStrategy) ContainerOption {
+	return func(c *Container) {
+		c.recoveryStrategy = strategy
+	}
+}
+
+// WithRetryConfig 设置重试配置
+func WithRetryConfig(config *RetryConfig) ContainerOption {
+	return func(c *Container) {
+		c.retryConfig = config
+	}
+}
+
+// WithOrderedClose 设置是否按顺序关闭组件（根据优先级）
+func WithOrderedClose(ordered bool) ContainerOption {
+	return func(c *Container) {
+		c.orderedClose = ordered
+	}
+}
+
 // NewContainer 创建一个容器
 func NewContainer(opts ...ContainerOption) *Container {
 	c := &Container{
-		ctx:         Default(), // 默认使用全局上下文
-		exitOnError: true,      // 默认发生错误时退出
+		ctx:              Default(),              // 默认使用全局上下文
+		exitOnError:      true,                   // 默认发生错误时退出
+		closeTimeout:     defaultCloseTimeout,    // 默认关闭超时
+		destroyTimeout:   defaultDestroyTimeout,  // 默认销毁超时
+		recoveryStrategy: ErrorRecoveryNone,      // 默认不进行错误恢复
+		retryConfig:      DefaultRetryConfig(),   // 默认重试配置
+		orderedClose:     false,                  // 默认不按顺序关闭
 	}
 
 	for _, opt := range opts {
 		opt(c)
+	}
+
+	// 如果配置了关闭超时，优先使用配置值
+	if timeout := etc.Get(defaultShutdownMaxWaitTimeKey).Duration(); timeout > 0 {
+		c.closeTimeout = timeout
 	}
 
 	return c
@@ -191,17 +283,16 @@ func (c *Container) handleError(err error) {
 	}
 }
 
-// 初始化所有组件（带回滚支持）
+// 初始化所有组件（带回滚支持和错误恢复策略）
 func (c *Container) doInitComponents() error {
 	c.initializedComps = make([]component.Component, 0, len(c.components))
 
 	for _, comp := range c.components {
-		if err := comp.Init(); err != nil {
-			return &ContainerError{
-				Phase:     "init",
-				Component: comp.Name(),
-				Err:       err,
-			}
+		err := c.executeWithRecovery("init", comp, func() error {
+			return comp.Init()
+		})
+		if err != nil {
+			return err
 		}
 		// 记录已初始化的组件
 		c.initializedComps = append(c.initializedComps, comp)
@@ -209,22 +300,83 @@ func (c *Container) doInitComponents() error {
 	return nil
 }
 
-// 启动所有组件（带回滚支持）
+// 启动所有组件（带回滚支持和错误恢复策略）
 func (c *Container) doStartComponents() error {
 	c.startedComps = make([]component.Component, 0, len(c.components))
 
 	for _, comp := range c.components {
-		if err := comp.Start(); err != nil {
-			return &ContainerError{
-				Phase:     "start",
-				Component: comp.Name(),
-				Err:       err,
-			}
+		err := c.executeWithRecovery("start", comp, func() error {
+			return comp.Start()
+		})
+		if err != nil {
+			return err
 		}
 		// 记录已启动的组件
 		c.startedComps = append(c.startedComps, comp)
 	}
 	return nil
+}
+
+// executeWithRecovery 执行操作并应用错误恢复策略
+func (c *Container) executeWithRecovery(phase string, comp component.Component, fn func() error) error {
+	var lastErr error
+	retryDelay := c.retryConfig.RetryDelay
+
+	for attempt := 0; attempt <= c.retryConfig.MaxRetries; attempt++ {
+		err := fn()
+		if err == nil {
+			return nil
+		}
+		lastErr = err
+
+		// 根据恢复策略处理错误
+		switch c.recoveryStrategy {
+		case ErrorRecoveryNone:
+			return &ContainerError{
+				Phase:     phase,
+				Component: comp.Name(),
+				Err:       err,
+				Retryable: false,
+			}
+
+		case ErrorRecoveryRetry:
+			if attempt < c.retryConfig.MaxRetries {
+				log.Warnf("[%s] component [%s] failed (attempt %d/%d): %v, retrying in %v...",
+					phase, comp.Name(), attempt+1, c.retryConfig.MaxRetries, err, retryDelay)
+				time.Sleep(retryDelay)
+				retryDelay = time.Duration(float64(retryDelay) * c.retryConfig.Backoff)
+				continue
+			}
+			return &ContainerError{
+				Phase:     phase,
+				Component: comp.Name(),
+				Err:       fmt.Errorf("max retries exceeded: %w", err),
+				Retryable: true,
+			}
+
+		case ErrorRecoverySkip:
+			log.Warnf("[%s] component [%s] failed: %v, skipping...", phase, comp.Name(), err)
+			return nil
+
+		case ErrorRecoveryCallback:
+			if c.errorHandler != nil {
+				c.errorHandler(&ContainerError{
+					Phase:     phase,
+					Component: comp.Name(),
+					Err:       err,
+					Retryable: true,
+				})
+			}
+			return nil
+		}
+	}
+
+	return &ContainerError{
+		Phase:     phase,
+		Component: comp.Name(),
+		Err:       lastErr,
+		Retryable: false,
+	}
 }
 
 // rollbackInit 回滚已初始化的组件（逆序销毁）
@@ -271,6 +423,11 @@ func (c *Container) rollbackStart() {
 
 // 关闭所有组件
 func (c *Container) doCloseComponents() {
+	if c.orderedClose {
+		c.doCloseComponentsOrdered()
+		return
+	}
+
 	g := xcall.NewGoroutines()
 
 	for _, comp := range c.components {
@@ -282,11 +439,29 @@ func (c *Container) doCloseComponents() {
 		})
 	}
 
-	g.Run(context.Background(), etc.Get(defaultShutdownMaxWaitTimeKey).Duration())
+	g.Run(context.Background(), c.closeTimeout)
+}
+
+// doCloseComponentsOrdered 按优先级顺序关闭组件
+func (c *Container) doCloseComponentsOrdered() {
+	// 按优先级排序组件
+	sorted := c.sortComponentsByPriority()
+
+	for _, comp := range sorted {
+		log.Infof("closing component [%s]...", comp.Name())
+		if err := comp.Close(); err != nil {
+			log.Warnf("close component [%s] failed: %v", comp.Name(), err)
+		}
+	}
 }
 
 // 销毁所有组件
 func (c *Container) doDestroyComponents() {
+	if c.orderedClose {
+		c.doDestroyComponentsOrdered()
+		return
+	}
+
 	g := xcall.NewGoroutines()
 
 	for _, comp := range c.components {
@@ -298,7 +473,48 @@ func (c *Container) doDestroyComponents() {
 		})
 	}
 
-	g.Run(context.Background(), 5*time.Second)
+	g.Run(context.Background(), c.destroyTimeout)
+}
+
+// doDestroyComponentsOrdered 按优先级顺序销毁组件
+func (c *Container) doDestroyComponentsOrdered() {
+	// 按优先级排序组件
+	sorted := c.sortComponentsByPriority()
+
+	for _, comp := range sorted {
+		log.Infof("destroying component [%s]...", comp.Name())
+		if err := comp.Destroy(); err != nil {
+			log.Warnf("destroy component [%s] failed: %v", comp.Name(), err)
+		}
+	}
+}
+
+// sortComponentsByPriority 按优先级排序组件（用于有序关闭）
+func (c *Container) sortComponentsByPriority() []component.Component {
+	// 复制组件列表
+	sorted := make([]component.Component, len(c.components))
+	copy(sorted, c.components)
+
+	// 使用简单的冒泡排序按优先级排序
+	for i := 0; i < len(sorted)-1; i++ {
+		for j := 0; j < len(sorted)-1-i; j++ {
+			p1 := c.getComponentPriority(sorted[j])
+			p2 := c.getComponentPriority(sorted[j+1])
+			if p1 > p2 {
+				sorted[j], sorted[j+1] = sorted[j+1], sorted[j]
+			}
+		}
+	}
+
+	return sorted
+}
+
+// getComponentPriority 获取组件优先级
+func (c *Container) getComponentPriority(comp component.Component) int {
+	if ordered, ok := comp.(OrderedComponent); ok {
+		return ordered.Priority()
+	}
+	return 100 // 默认优先级
 }
 
 // 等待系统信号

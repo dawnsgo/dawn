@@ -237,55 +237,15 @@ func (c *defaultConfigurator) Close() {
 
 // Has 检测多个匹配规则中是否存在配置
 func (c *defaultConfigurator) Has(pattern string) bool {
-	return c.doHas(pattern)
-}
-
-// 执行检测配置是否存在操作
-func (c *defaultConfigurator) doHas(pattern string) bool {
-	var (
-		keys   = strings.Split(pattern, ".")
-		node   any
-		found  = true
-		values = c.load()
-	)
-
-	keys = reviseKeys(keys, values)
-	node = values
-	for _, key := range keys {
-		switch vs := node.(type) {
-		case map[string]any:
-			if v, ok := vs[key]; ok {
-				node = v
-			} else {
-				found = false
-			}
-		case []any:
-			i, err := strconv.Atoi(key)
-			if err != nil {
-				found = false
-			} else if len(vs) > i {
-				node = vs[i]
-			} else {
-				found = false
-			}
-		default:
-			found = false
-		}
-
-		if !found {
-			break
-		}
-	}
-
+	_, found := c.findNode(pattern)
 	return found
 }
 
 // Get 获取配置值
 func (c *defaultConfigurator) Get(pattern string, def ...any) value.Value {
-	if val, ok := c.doGet(pattern); ok {
-		return val
+	if node, found := c.findNode(pattern); found {
+		return value.NewValue(node)
 	}
-
 	return value.NewValue(def...)
 }
 
@@ -294,53 +254,37 @@ func (c *defaultConfigurator) Match(patterns ...string) Matcher {
 	return &defaultMatcher{c: c, patterns: patterns}
 }
 
-// 执行获取配置操作
-func (c *defaultConfigurator) doGet(pattern string) (value.Value, bool) {
-	var (
-		keys   = strings.Split(pattern, ".")
-		node   any
-		found  = true
-		values = c.load()
-	)
-
+// findNode 查找配置节点（统一的配置查找逻辑）
+// 返回找到的节点值和是否找到的标志
+func (c *defaultConfigurator) findNode(pattern string) (any, bool) {
+	values := c.load()
 	if len(values) == 0 {
-		goto NOTFOUND
+		return nil, false
 	}
 
-	keys = reviseKeys(keys, values)
-	node = values
+	keys := reviseKeys(strings.Split(pattern, "."), values)
+	var node any = values
+
 	for _, key := range keys {
 		switch vs := node.(type) {
 		case map[string]any:
-			if v, ok := vs[key]; ok {
-				node = v
-			} else {
-				found = false
+			v, ok := vs[key]
+			if !ok {
+				return nil, false
 			}
+			node = v
 		case []any:
 			i, err := strconv.Atoi(key)
-			if err != nil {
-				found = false
-			} else if len(vs) > i {
-				node = vs[i]
-			} else {
-				found = false
+			if err != nil || i >= len(vs) {
+				return nil, false
 			}
+			node = vs[i]
 		default:
-			found = false
-		}
-
-		if !found {
-			break
+			return nil, false
 		}
 	}
 
-	if found {
-		return value.NewValue(node), true
-	}
-
-NOTFOUND:
-	return nil, false
+	return node, true
 }
 
 // Set 设置配置值
