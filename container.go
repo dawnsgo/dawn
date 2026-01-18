@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sort"
 	"strconv"
 	"syscall"
 	"time"
@@ -287,7 +288,24 @@ func (c *Container) handleError(err error) {
 func (c *Container) doInitComponents() error {
 	c.initializedComps = make([]component.Component, 0, len(c.components))
 
-	for _, comp := range c.components {
+	// 如果启用了有序模式，按依赖关系排序后初始化
+	comps := c.components
+	if c.orderedClose {
+		sorted, err := c.sortComponentsByDependency()
+		if err != nil {
+			return &ContainerError{
+				Phase:     "init",
+				Component: "dependency",
+				Err:       err,
+				Retryable: false,
+			}
+		}
+		if sorted != nil {
+			comps = sorted
+		}
+	}
+
+	for _, comp := range comps {
 		err := c.executeWithRecovery("init", comp, func() error {
 			return comp.Init()
 		})
@@ -304,7 +322,14 @@ func (c *Container) doInitComponents() error {
 func (c *Container) doStartComponents() error {
 	c.startedComps = make([]component.Component, 0, len(c.components))
 
-	for _, comp := range c.components {
+	// 使用初始化时已排序的组件列表（initializedComps）
+	// 这样可以保证启动顺序与初始化顺序一致
+	comps := c.initializedComps
+	if len(comps) == 0 {
+		comps = c.components
+	}
+
+	for _, comp := range comps {
 		err := c.executeWithRecovery("start", comp, func() error {
 			return comp.Start()
 		})
@@ -490,21 +515,16 @@ func (c *Container) doDestroyComponentsOrdered() {
 }
 
 // sortComponentsByPriority 按优先级排序组件（用于有序关闭）
+// 使用快速排序算法，时间复杂度 O(n log n)，比原来的冒泡排序 O(n²) 更高效
 func (c *Container) sortComponentsByPriority() []component.Component {
 	// 复制组件列表
 	sorted := make([]component.Component, len(c.components))
 	copy(sorted, c.components)
 
-	// 使用简单的冒泡排序按优先级排序
-	for i := 0; i < len(sorted)-1; i++ {
-		for j := 0; j < len(sorted)-1-i; j++ {
-			p1 := c.getComponentPriority(sorted[j])
-			p2 := c.getComponentPriority(sorted[j+1])
-			if p1 > p2 {
-				sorted[j], sorted[j+1] = sorted[j+1], sorted[j]
-			}
-		}
-	}
+	// 使用标准库的快速排序，时间复杂度 O(n log n)
+	sort.Slice(sorted, func(i, j int) bool {
+		return c.getComponentPriority(sorted[i]) < c.getComponentPriority(sorted[j])
+	})
 
 	return sorted
 }
@@ -515,6 +535,113 @@ func (c *Container) getComponentPriority(comp component.Component) int {
 		return ordered.Priority()
 	}
 	return 100 // 默认优先级
+}
+
+// getComponentDependencies 获取组件依赖
+func (c *Container) getComponentDependencies(comp component.Component) []string {
+	if ordered, ok := comp.(OrderedComponent); ok {
+		return ordered.Dependencies()
+	}
+	return nil
+}
+
+// sortComponentsByDependency 按依赖关系排序组件（拓扑排序）
+// 返回排序后的组件列表，如果存在循环依赖则返回错误
+func (c *Container) sortComponentsByDependency() ([]component.Component, error) {
+	if len(c.components) == 0 {
+		return nil, nil
+	}
+
+	// 构建组件名称到组件的映射
+	nameToComp := make(map[string]component.Component)
+	for _, comp := range c.components {
+		nameToComp[comp.Name()] = comp
+	}
+
+	// 构建依赖图（入度和邻接表）
+	inDegree := make(map[string]int)
+	adjList := make(map[string][]string)
+
+	for _, comp := range c.components {
+		name := comp.Name()
+		if _, exists := inDegree[name]; !exists {
+			inDegree[name] = 0
+		}
+
+		deps := c.getComponentDependencies(comp)
+		for _, dep := range deps {
+			// 只处理存在的依赖
+			if _, exists := nameToComp[dep]; exists {
+				adjList[dep] = append(adjList[dep], name)
+				inDegree[name]++
+			}
+		}
+	}
+
+	// Kahn's 算法进行拓扑排序
+	var queue []string
+	for name, degree := range inDegree {
+		if degree == 0 {
+			queue = append(queue, name)
+		}
+	}
+
+	var sorted []component.Component
+	for len(queue) > 0 {
+		// 取出队首
+		name := queue[0]
+		queue = queue[1:]
+
+		if comp, exists := nameToComp[name]; exists {
+			sorted = append(sorted, comp)
+		}
+
+		// 更新邻接节点的入度
+		for _, neighbor := range adjList[name] {
+			inDegree[neighbor]--
+			if inDegree[neighbor] == 0 {
+				queue = append(queue, neighbor)
+			}
+		}
+	}
+
+	// 检查是否存在循环依赖
+	if len(sorted) != len(c.components) {
+		// 找出循环依赖的组件
+		var cyclic []string
+		for name, degree := range inDegree {
+			if degree > 0 {
+				cyclic = append(cyclic, name)
+			}
+		}
+		return nil, fmt.Errorf("circular dependency detected among components: %v", cyclic)
+	}
+
+	return sorted, nil
+}
+
+// ValidateDependencies 验证组件依赖关系
+// 检查是否存在循环依赖或缺失的依赖
+func (c *Container) ValidateDependencies() error {
+	// 构建组件名称集合
+	nameSet := make(map[string]bool)
+	for _, comp := range c.components {
+		nameSet[comp.Name()] = true
+	}
+
+	// 检查每个组件的依赖
+	for _, comp := range c.components {
+		deps := c.getComponentDependencies(comp)
+		for _, dep := range deps {
+			if !nameSet[dep] {
+				log.Warnf("component [%s] depends on missing component [%s]", comp.Name(), dep)
+			}
+		}
+	}
+
+	// 检查循环依赖
+	_, err := c.sortComponentsByDependency()
+	return err
 }
 
 // 等待系统信号

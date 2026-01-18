@@ -223,3 +223,213 @@ func TestContainer_doClearModules(t *testing.T) {
 	// 测试清理模块（不会 panic）
 	c.doClearModules()
 }
+
+// mockOrderedComponent 带优先级和依赖的模拟组件
+type mockOrderedComponent struct {
+	mockComponent
+	priority     int
+	dependencies []string
+}
+
+func (m *mockOrderedComponent) Priority() int {
+	return m.priority
+}
+
+func (m *mockOrderedComponent) Dependencies() []string {
+	return m.dependencies
+}
+
+func TestContainer_sortComponentsByPriority(t *testing.T) {
+	c := NewContainer()
+
+	// 添加带优先级的组件
+	comp1 := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "comp1"},
+		priority:      3,
+	}
+	comp2 := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "comp2"},
+		priority:      1,
+	}
+	comp3 := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "comp3"},
+		priority:      2,
+	}
+	// 添加一个普通组件（使用默认优先级100）
+	comp4 := &mockComponent{name: "comp4"}
+
+	c.Add(comp1, comp2, comp3, comp4)
+
+	sorted := c.sortComponentsByPriority()
+
+	// 验证排序顺序：comp2(1) < comp3(2) < comp1(3) < comp4(100)
+	if len(sorted) != 4 {
+		t.Fatalf("Expected 4 components, got %d", len(sorted))
+	}
+	if sorted[0].Name() != "comp2" {
+		t.Errorf("Expected first component to be 'comp2', got '%s'", sorted[0].Name())
+	}
+	if sorted[1].Name() != "comp3" {
+		t.Errorf("Expected second component to be 'comp3', got '%s'", sorted[1].Name())
+	}
+	if sorted[2].Name() != "comp1" {
+		t.Errorf("Expected third component to be 'comp1', got '%s'", sorted[2].Name())
+	}
+	if sorted[3].Name() != "comp4" {
+		t.Errorf("Expected fourth component to be 'comp4', got '%s'", sorted[3].Name())
+	}
+}
+
+func TestContainer_sortComponentsByDependency(t *testing.T) {
+	c := NewContainer()
+
+	// 创建有依赖关系的组件：
+	// comp3 依赖 comp2
+	// comp2 依赖 comp1
+	// comp1 无依赖
+	comp1 := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "comp1"},
+		dependencies:  nil,
+	}
+	comp2 := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "comp2"},
+		dependencies:  []string{"comp1"},
+	}
+	comp3 := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "comp3"},
+		dependencies:  []string{"comp2"},
+	}
+
+	// 以错误顺序添加
+	c.Add(comp3, comp2, comp1)
+
+	sorted, err := c.sortComponentsByDependency()
+	if err != nil {
+		t.Fatalf("sortComponentsByDependency() failed: %v", err)
+	}
+
+	// 验证排序顺序：comp1 < comp2 < comp3
+	if len(sorted) != 3 {
+		t.Fatalf("Expected 3 components, got %d", len(sorted))
+	}
+
+	// 构建位置映射
+	positions := make(map[string]int)
+	for i, comp := range sorted {
+		positions[comp.Name()] = i
+	}
+
+	// 验证依赖顺序
+	if positions["comp1"] > positions["comp2"] {
+		t.Error("comp1 should come before comp2")
+	}
+	if positions["comp2"] > positions["comp3"] {
+		t.Error("comp2 should come before comp3")
+	}
+}
+
+func TestContainer_sortComponentsByDependency_CircularDependency(t *testing.T) {
+	c := NewContainer()
+
+	// 创建循环依赖：comp1 -> comp2 -> comp3 -> comp1
+	comp1 := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "comp1"},
+		dependencies:  []string{"comp3"},
+	}
+	comp2 := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "comp2"},
+		dependencies:  []string{"comp1"},
+	}
+	comp3 := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "comp3"},
+		dependencies:  []string{"comp2"},
+	}
+
+	c.Add(comp1, comp2, comp3)
+
+	_, err := c.sortComponentsByDependency()
+	if err == nil {
+		t.Fatal("Expected circular dependency error, got nil")
+	}
+}
+
+func TestContainer_ValidateDependencies(t *testing.T) {
+	c := NewContainer()
+
+	// 正常依赖关系
+	comp1 := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "comp1"},
+		dependencies:  nil,
+	}
+	comp2 := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "comp2"},
+		dependencies:  []string{"comp1"},
+	}
+
+	c.Add(comp1, comp2)
+
+	err := c.ValidateDependencies()
+	if err != nil {
+		t.Fatalf("ValidateDependencies() failed: %v", err)
+	}
+}
+
+func TestContainer_ValidateDependencies_MissingDependency(t *testing.T) {
+	c := NewContainer()
+
+	// 依赖不存在的组件（只会警告，不会报错）
+	comp1 := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "comp1"},
+		dependencies:  []string{"missing_comp"},
+	}
+
+	c.Add(comp1)
+
+	// 缺失依赖不会导致错误（只会警告）
+	err := c.ValidateDependencies()
+	if err != nil {
+		t.Fatalf("ValidateDependencies() should not fail for missing dependencies: %v", err)
+	}
+}
+
+func TestContainer_getComponentPriority(t *testing.T) {
+	c := NewContainer()
+
+	// 测试普通组件（默认优先级）
+	normalComp := &mockComponent{name: "normal"}
+	priority := c.getComponentPriority(normalComp)
+	if priority != 100 {
+		t.Errorf("Expected default priority 100, got %d", priority)
+	}
+
+	// 测试有序组件
+	orderedComp := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "ordered"},
+		priority:      50,
+	}
+	priority = c.getComponentPriority(orderedComp)
+	if priority != 50 {
+		t.Errorf("Expected priority 50, got %d", priority)
+	}
+}
+
+func TestContainer_getComponentDependencies(t *testing.T) {
+	c := NewContainer()
+
+	// 测试普通组件（无依赖）
+	normalComp := &mockComponent{name: "normal"}
+	deps := c.getComponentDependencies(normalComp)
+	if deps != nil {
+		t.Errorf("Expected nil dependencies, got %v", deps)
+	}
+
+	// 测试有序组件
+	orderedComp := &mockOrderedComponent{
+		mockComponent: mockComponent{name: "ordered"},
+		dependencies:  []string{"dep1", "dep2"},
+	}
+	deps = c.getComponentDependencies(orderedComp)
+	if len(deps) != 2 {
+		t.Errorf("Expected 2 dependencies, got %d", len(deps))
+	}
+}

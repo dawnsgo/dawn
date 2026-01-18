@@ -29,8 +29,8 @@ func (m *defaultMatcher) Has() bool {
 	}
 
 	for _, pattern := range m.patterns {
-		if ok := m.c.doHas(pattern); ok {
-			return ok
+		if _, ok := m.c.findNode(pattern); ok {
+			return true
 		}
 	}
 
@@ -41,8 +41,8 @@ func (m *defaultMatcher) Has() bool {
 func (m *defaultMatcher) Get(def ...any) value.Value {
 	if m.c != nil {
 		for _, pattern := range m.patterns {
-			if val, ok := m.c.doGet(pattern); ok {
-				return val
+			if node, ok := m.c.findNode(pattern); ok {
+				return value.NewValue(node)
 			}
 		}
 	}
@@ -54,8 +54,8 @@ func (m *defaultMatcher) Get(def ...any) value.Value {
 func (m *defaultMatcher) Scan(dest any) error {
 	if m.c != nil {
 		for _, pattern := range m.patterns {
-			if val, ok := m.c.doGet(pattern); ok {
-				return val.Scan(dest)
+			if node, ok := m.c.findNode(pattern); ok {
+				return value.NewValue(node).Scan(dest)
 			}
 		}
 	}

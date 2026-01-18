@@ -511,3 +511,107 @@ func TestSession_Close(t *testing.T) {
 		t.Fatalf("Close() failed: %v", err)
 	}
 }
+
+func TestSession_ChannelSharding(t *testing.T) {
+	s := NewSession()
+
+	// 验证频道分片已初始化
+	if len(s.channelShards) != defaultShardCount {
+		t.Fatalf("Expected %d channel shards, got %d", defaultShardCount, len(s.channelShards))
+	}
+
+	// 测试不同频道名称的分片分布
+	conn1 := &mockConn{id: 1, uid: 0}
+	conn2 := &mockConn{id: 2, uid: 0}
+	conn3 := &mockConn{id: 3, uid: 0}
+	s.AddConn(conn1)
+	s.AddConn(conn2)
+	s.AddConn(conn3)
+
+	// 订阅多个频道
+	err := s.Subscribe(Conn, []int64{1}, "channel_a")
+	if err != nil {
+		t.Fatalf("Subscribe() failed: %v", err)
+	}
+	err = s.Subscribe(Conn, []int64{2}, "channel_b")
+	if err != nil {
+		t.Fatalf("Subscribe() failed: %v", err)
+	}
+	err = s.Subscribe(Conn, []int64{3}, "channel_c")
+	if err != nil {
+		t.Fatalf("Subscribe() failed: %v", err)
+	}
+
+	// 验证发布功能正常
+	n := s.Publish("channel_a", []byte("test"))
+	if n != 1 {
+		t.Fatalf("Expected 1, got %d", n)
+	}
+	n = s.Publish("channel_b", []byte("test"))
+	if n != 1 {
+		t.Fatalf("Expected 1, got %d", n)
+	}
+	n = s.Publish("channel_c", []byte("test"))
+	if n != 1 {
+		t.Fatalf("Expected 1, got %d", n)
+	}
+
+	// 验证取消订阅功能正常
+	err = s.Unsubscribe(Conn, []int64{1}, "channel_a")
+	if err != nil {
+		t.Fatalf("Unsubscribe() failed: %v", err)
+	}
+	n = s.Publish("channel_a", []byte("test"))
+	if n != 0 {
+		t.Fatalf("Expected 0 after unsubscribe, got %d", n)
+	}
+}
+
+func TestSession_getChannelShard(t *testing.T) {
+	s := NewSession()
+
+	// 测试相同频道名称返回相同分片
+	shard1 := s.getChannelShard("test_channel")
+	shard2 := s.getChannelShard("test_channel")
+	if shard1 != shard2 {
+		t.Fatal("Same channel name should return same shard")
+	}
+
+	// 测试不同频道名称可能返回不同分片
+	// 这个测试只验证 hash 函数工作正常，不要求一定返回不同分片
+	_ = s.getChannelShard("channel_1")
+	_ = s.getChannelShard("channel_2")
+	// 只要不 panic 就算通过
+}
+
+func TestSession_Stat(t *testing.T) {
+	s := NewSession()
+	conn1 := &mockConn{id: 1, uid: 0}
+	conn2 := &mockConn{id: 2, uid: 100}
+	s.AddConn(conn1)
+	s.AddConn(conn2)
+
+	// 测试连接统计
+	count, err := s.Stat(Conn)
+	if err != nil {
+		t.Fatalf("Stat() failed: %v", err)
+	}
+	if count != 2 {
+		t.Fatalf("Expected 2, got %d", count)
+	}
+
+	// 测试用户统计
+	count, err = s.Stat(User)
+	if err != nil {
+		t.Fatalf("Stat() failed: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("Expected 1, got %d", count)
+	}
+
+	// 测试无效类型
+	_, err = s.Stat(Kind(99))
+	if err == nil {
+		t.Fatal("Expected error for invalid Kind")
+	}
+}

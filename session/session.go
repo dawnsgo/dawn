@@ -41,13 +41,19 @@ type userShard struct {
 	items map[int64]network.Conn
 }
 
+// channelShard 频道分片
+type channelShard struct {
+	sync.RWMutex
+	items map[string]map[network.Conn]struct{}
+}
+
 // Session 会话管理器（分片锁设计）
+// 所有数据结构都使用分片锁，减少锁竞争，提高并发性能
 type Session struct {
-	shardCount int                                  // 分片数量
-	connShards []*connShard                         // 连接分片
-	userShards []*userShard                         // 用户分片
-	channelRW  sync.RWMutex                         // 频道锁
-	channels   map[string]map[network.Conn]struct{} // 会话频道
+	shardCount    int             // 分片数量
+	connShards    []*connShard    // 连接分片
+	userShards    []*userShard    // 用户分片
+	channelShards []*channelShard // 频道分片（优化：从全局锁改为分片锁）
 }
 
 // Option 配置选项
@@ -66,7 +72,6 @@ func WithShardCount(count int) Option {
 func NewSession(opts ...Option) *Session {
 	s := &Session{
 		shardCount: defaultShardCount,
-		channels:   make(map[string]map[network.Conn]struct{}),
 	}
 
 	for _, opt := range opts {
@@ -89,6 +94,14 @@ func NewSession(opts ...Option) *Session {
 		}
 	}
 
+	// 初始化频道分片（优化：从全局锁改为分片锁）
+	s.channelShards = make([]*channelShard, s.shardCount)
+	for i := 0; i < s.shardCount; i++ {
+		s.channelShards[i] = &channelShard{
+			items: make(map[string]map[network.Conn]struct{}),
+		}
+	}
+
 	return s
 }
 
@@ -100,6 +113,16 @@ func (s *Session) getConnShard(cid int64) *connShard {
 // getUserShard 获取用户分片
 func (s *Session) getUserShard(uid int64) *userShard {
 	return s.userShards[uid%int64(s.shardCount)]
+}
+
+// getChannelShard 获取频道分片（使用字符串hash）
+func (s *Session) getChannelShard(channel string) *channelShard {
+	// 使用简单的字符串hash算法
+	var hash uint32
+	for i := 0; i < len(channel); i++ {
+		hash = hash*31 + uint32(channel[i])
+	}
+	return s.channelShards[hash%uint32(s.shardCount)]
 }
 
 // AddConn 添加连接
@@ -139,11 +162,13 @@ func (s *Session) RemConn(conn network.Conn) {
 		userShard.Unlock()
 	}
 
-	// 取消所有频道订阅
+	// 取消所有频道订阅（使用分片锁）
 	conn.Attr().Visit(func(channel, _ any) bool {
-		s.channelRW.Lock()
-		s.doUnsubscribe(channel.(string), conn)
-		s.channelRW.Unlock()
+		channelName := channel.(string)
+		shard := s.getChannelShard(channelName)
+		shard.Lock()
+		s.doUnsubscribeInShard(shard, channelName, conn)
+		shard.Unlock()
 		return true
 	})
 }
@@ -358,10 +383,11 @@ func (s *Session) Broadcast(kind Kind, message []byte) (n int64, err error) {
 
 // Publish 发布频道消息（异步）
 func (s *Session) Publish(channel string, message []byte) (n int64) {
-	s.channelRW.RLock()
-	channels, ok := s.channels[channel]
+	shard := s.getChannelShard(channel)
+	shard.RLock()
+	channels, ok := shard.items[channel]
 	if !ok {
-		s.channelRW.RUnlock()
+		shard.RUnlock()
 		return
 	}
 
@@ -370,7 +396,7 @@ func (s *Session) Publish(channel string, message []byte) (n int64) {
 			n++
 		}
 	}
-	s.channelRW.RUnlock()
+	shard.RUnlock()
 
 	return
 }
@@ -408,20 +434,21 @@ func (s *Session) Subscribe(kind Kind, targets []int64, channel string) (err err
 		return
 	}
 
-	// 订阅频道
-	s.channelRW.Lock()
+	// 订阅频道（使用分片锁）
+	shard := s.getChannelShard(channel)
+	shard.Lock()
 	for _, conn := range conns {
 		conn.Attr().Set(channel, struct{}{})
 
-		if channels, ok := s.channels[channel]; ok {
+		if channels, ok := shard.items[channel]; ok {
 			channels[conn] = struct{}{}
 		} else {
 			channels = make(map[network.Conn]struct{}, len(targets))
 			channels[conn] = struct{}{}
-			s.channels[channel] = channels
+			shard.items[channel] = channels
 		}
 	}
-	s.channelRW.Unlock()
+	shard.Unlock()
 
 	return
 }
@@ -459,25 +486,26 @@ func (s *Session) Unsubscribe(kind Kind, targets []int64, channel string) (err e
 		return
 	}
 
-	// 取消订阅
-	s.channelRW.Lock()
+	// 取消订阅（使用分片锁）
+	shard := s.getChannelShard(channel)
+	shard.Lock()
 	for _, conn := range conns {
 		if ok := conn.Attr().Del(channel); ok {
-			s.doUnsubscribe(channel, conn)
+			s.doUnsubscribeInShard(shard, channel, conn)
 		}
 	}
-	s.channelRW.Unlock()
+	shard.Unlock()
 
 	return
 }
 
-// doUnsubscribe 取消订阅频道（内部方法，调用前需持有 channelRW 锁）
-func (s *Session) doUnsubscribe(channel string, conn network.Conn) {
-	if channels, ok := s.channels[channel]; ok {
+// doUnsubscribeInShard 取消订阅频道（内部方法，调用前需持有分片锁）
+func (s *Session) doUnsubscribeInShard(shard *channelShard, channel string, conn network.Conn) {
+	if channels, ok := shard.items[channel]; ok {
 		delete(channels, conn)
 
 		if len(channels) == 0 {
-			delete(s.channels, channel)
+			delete(shard.items, channel)
 		}
 	}
 }
