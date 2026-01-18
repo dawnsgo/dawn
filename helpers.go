@@ -9,41 +9,42 @@ import (
 	"github.com/dawnsgo/dawn/task"
 )
 
-// SetLogger 设置日志记录器（同时设置 Context 和全局变量）
+// ==================== Setter 函数 ====================
+// 这些函数只需要设置到 Context，各包会自动从 Context 读取
+// 不再需要双重同步（Context + 全局变量）
+
+// SetLogger 设置日志记录器
 func SetLogger(logger log.Logger) {
 	Default().SetLogger(logger)
-	log.SetLogger(logger)
 }
 
-// SetConfigurator 设置配置器（同时设置 Context 和全局变量）
+// SetConfigurator 设置配置器
 func SetConfigurator(configurator config.Configurator) {
 	Default().SetConfigurator(configurator)
-	config.SetConfigurator(configurator)
 }
 
-// SetEventbus 设置事件总线（同时设置 Context 和全局变量）
+// SetEventbus 设置事件总线
 func SetEventbus(eb eventbus.Eventbus) {
 	Default().SetEventbus(eb)
-	eventbus.SetEventbus(eb)
 }
 
-// SetTaskPool 设置任务池（同时设置 Context 和全局变量）
+// SetTaskPool 设置任务池
 func SetTaskPool(pool task.Pool) {
 	Default().SetTaskPool(pool)
-	task.SetPool(pool)
 }
 
-// SetCache 设置缓存（同时设置 Context 和全局变量）
+// SetCache 设置缓存
 func SetCache(ca cache.Cache) {
 	Default().SetCache(ca)
-	cache.SetCache(ca)
 }
 
-// SetLockMaker 设置分布式锁制造器（同时设置 Context 和全局变量）
+// SetLockMaker 设置分布式锁制造器
 func SetLockMaker(maker lock.Maker) {
 	Default().SetLockMaker(maker)
-	lock.SetMaker(maker)
 }
+
+// ==================== Getter 函数 ====================
+// 这些函数从 Context 读取
 
 // GetLogger 获取日志记录器
 func GetLogger() log.Logger {

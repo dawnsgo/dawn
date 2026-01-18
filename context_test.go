@@ -6,38 +6,101 @@
 package dawn
 
 import (
+	"context"
 	"testing"
+	"time"
+
+	"github.com/dawnsgo/dawn/cache"
+	"github.com/dawnsgo/dawn/config"
+	"github.com/dawnsgo/dawn/core/value"
+	"github.com/dawnsgo/dawn/eventbus"
+	dawnlog "github.com/dawnsgo/dawn/log"
+	"github.com/dawnsgo/dawn/lock"
+	"github.com/dawnsgo/dawn/task"
 )
 
-// mockLogger 模拟日志记录器
+// ==================== Mock Logger ====================
+
 type mockLogger struct{}
 
-func (m *mockLogger) Close() error { return nil }
+func (m *mockLogger) Print(level dawnlog.Level, a ...any)              {}
+func (m *mockLogger) Printf(level dawnlog.Level, format string, a ...any) {}
+func (m *mockLogger) Debug(a ...any)                                   {}
+func (m *mockLogger) Debugf(format string, a ...any)                   {}
+func (m *mockLogger) Info(a ...any)                                    {}
+func (m *mockLogger) Infof(format string, a ...any)                    {}
+func (m *mockLogger) Warn(a ...any)                                    {}
+func (m *mockLogger) Warnf(format string, a ...any)                    {}
+func (m *mockLogger) Error(a ...any)                                   {}
+func (m *mockLogger) Errorf(format string, a ...any)                   {}
+func (m *mockLogger) Fatal(a ...any)                                   {}
+func (m *mockLogger) Fatalf(format string, a ...any)                   {}
+func (m *mockLogger) Panic(a ...any)                                   {}
+func (m *mockLogger) Panicf(format string, a ...any)                   {}
+func (m *mockLogger) Close() error                                     { return nil }
 
-// mockConfigurator 模拟配置器
+// ==================== Mock Configurator ====================
+
 type mockConfigurator struct{}
 
-func (m *mockConfigurator) Close() error { return nil }
+func (m *mockConfigurator) Has(pattern string) bool                     { return false }
+func (m *mockConfigurator) Get(pattern string, def ...any) value.Value  { return value.NewValue() }
+func (m *mockConfigurator) Set(pattern string, value any) error         { return nil }
+func (m *mockConfigurator) Match(patterns ...string) config.Matcher     { return nil }
+func (m *mockConfigurator) Watch(cb config.WatchCallbackFunc, names ...string) {}
+func (m *mockConfigurator) Load(ctx context.Context, source string, file ...string) ([]*config.Configuration, error) {
+	return nil, nil
+}
+func (m *mockConfigurator) Store(ctx context.Context, source string, file string, content any, override ...bool) error {
+	return nil
+}
+func (m *mockConfigurator) Close() {}
 
-// mockEventbus 模拟事件总线
+// ==================== Mock Eventbus ====================
+
 type mockEventbus struct{}
 
-func (m *mockEventbus) Close() error { return nil }
+func (m *mockEventbus) Close() error                                                      { return nil }
+func (m *mockEventbus) Publish(ctx context.Context, topic string, message any) error      { return nil }
+func (m *mockEventbus) Subscribe(ctx context.Context, topic string, handler eventbus.EventHandler) error {
+	return nil
+}
+func (m *mockEventbus) Unsubscribe(ctx context.Context, topic string, handler eventbus.EventHandler) error {
+	return nil
+}
 
-// mockTaskPool 模拟任务池
+// ==================== Mock TaskPool ====================
+
 type mockTaskPool struct{}
 
-func (m *mockTaskPool) Release() {}
+func (m *mockTaskPool) AddTask(task func()) error { return nil }
+func (m *mockTaskPool) Release()                  {}
 
-// mockCache 模拟缓存
+// ==================== Mock Cache ====================
+
 type mockCache struct{}
 
-func (m *mockCache) Close() error { return nil }
+func (m *mockCache) Has(ctx context.Context, key string) (bool, error)                                  { return false, nil }
+func (m *mockCache) Get(ctx context.Context, key string, def ...any) cache.Result                       { return nil }
+func (m *mockCache) Set(ctx context.Context, key string, value any, expiration ...time.Duration) error  { return nil }
+func (m *mockCache) GetSet(ctx context.Context, key string, fn cache.SetValueFunc) cache.Result         { return nil }
+func (m *mockCache) Delete(ctx context.Context, keys ...string) (int64, error)                          { return 0, nil }
+func (m *mockCache) IncrInt(ctx context.Context, key string, value int64) (int64, error)                { return 0, nil }
+func (m *mockCache) IncrFloat(ctx context.Context, key string, value float64) (float64, error)          { return 0, nil }
+func (m *mockCache) DecrInt(ctx context.Context, key string, value int64) (int64, error)                { return 0, nil }
+func (m *mockCache) DecrFloat(ctx context.Context, key string, value float64) (float64, error)          { return 0, nil }
+func (m *mockCache) AddPrefix(key string) string                                                        { return key }
+func (m *mockCache) Client() any                                                                        { return nil }
+func (m *mockCache) Close() error                                                                       { return nil }
 
-// mockLockMaker 模拟锁制造器
+// ==================== Mock LockMaker ====================
+
 type mockLockMaker struct{}
 
-func (m *mockLockMaker) Close() error { return nil }
+func (m *mockLockMaker) Make(name string) lock.Locker { return nil }
+func (m *mockLockMaker) Close() error                 { return nil }
+
+// ==================== Tests ====================
 
 func TestNewContext(t *testing.T) {
 	ctx := NewContext()
@@ -103,92 +166,92 @@ func TestContext_SetConfigurator(t *testing.T) {
 
 func TestContext_SetEventbus(t *testing.T) {
 	ctx := NewContext()
-	eventbus := &mockEventbus{}
+	eb := &mockEventbus{}
 
-	ctx.SetEventbus(eventbus)
-	if ctx.Eventbus() != eventbus {
+	ctx.SetEventbus(eb)
+	if ctx.Eventbus() != eb {
 		t.Fatal("Eventbus not set correctly")
 	}
 
 	// 测试设置 nil
 	ctx.SetEventbus(nil)
-	if ctx.Eventbus() != eventbus {
+	if ctx.Eventbus() != eb {
 		t.Fatal("Eventbus should not change when setting nil")
 	}
 
 	// 测试替换
-	eventbus2 := &mockEventbus{}
-	ctx.SetEventbus(eventbus2)
-	if ctx.Eventbus() != eventbus2 {
+	eb2 := &mockEventbus{}
+	ctx.SetEventbus(eb2)
+	if ctx.Eventbus() != eb2 {
 		t.Fatal("Eventbus not replaced correctly")
 	}
 }
 
 func TestContext_SetTaskPool(t *testing.T) {
 	ctx := NewContext()
-	taskPool := &mockTaskPool{}
+	pool := &mockTaskPool{}
 
-	ctx.SetTaskPool(taskPool)
-	if ctx.TaskPool() != taskPool {
+	ctx.SetTaskPool(pool)
+	if ctx.TaskPool() != pool {
 		t.Fatal("TaskPool not set correctly")
 	}
 
 	// 测试设置 nil
 	ctx.SetTaskPool(nil)
-	if ctx.TaskPool() != taskPool {
+	if ctx.TaskPool() != pool {
 		t.Fatal("TaskPool should not change when setting nil")
 	}
 
 	// 测试替换
-	taskPool2 := &mockTaskPool{}
-	ctx.SetTaskPool(taskPool2)
-	if ctx.TaskPool() != taskPool2 {
+	pool2 := &mockTaskPool{}
+	ctx.SetTaskPool(pool2)
+	if ctx.TaskPool() != pool2 {
 		t.Fatal("TaskPool not replaced correctly")
 	}
 }
 
 func TestContext_SetCache(t *testing.T) {
 	ctx := NewContext()
-	cache := &mockCache{}
+	ca := &mockCache{}
 
-	ctx.SetCache(cache)
-	if ctx.Cache() != cache {
+	ctx.SetCache(ca)
+	if ctx.Cache() != ca {
 		t.Fatal("Cache not set correctly")
 	}
 
 	// 测试设置 nil
 	ctx.SetCache(nil)
-	if ctx.Cache() != cache {
+	if ctx.Cache() != ca {
 		t.Fatal("Cache should not change when setting nil")
 	}
 
 	// 测试替换
-	cache2 := &mockCache{}
-	ctx.SetCache(cache2)
-	if ctx.Cache() != cache2 {
+	ca2 := &mockCache{}
+	ctx.SetCache(ca2)
+	if ctx.Cache() != ca2 {
 		t.Fatal("Cache not replaced correctly")
 	}
 }
 
 func TestContext_SetLockMaker(t *testing.T) {
 	ctx := NewContext()
-	lockMaker := &mockLockMaker{}
+	maker := &mockLockMaker{}
 
-	ctx.SetLockMaker(lockMaker)
-	if ctx.LockMaker() != lockMaker {
+	ctx.SetLockMaker(maker)
+	if ctx.LockMaker() != maker {
 		t.Fatal("LockMaker not set correctly")
 	}
 
 	// 测试设置 nil
 	ctx.SetLockMaker(nil)
-	if ctx.LockMaker() != lockMaker {
+	if ctx.LockMaker() != maker {
 		t.Fatal("LockMaker should not change when setting nil")
 	}
 
 	// 测试替换
-	lockMaker2 := &mockLockMaker{}
-	ctx.SetLockMaker(lockMaker2)
-	if ctx.LockMaker() != lockMaker2 {
+	maker2 := &mockLockMaker{}
+	ctx.SetLockMaker(maker2)
+	if ctx.LockMaker() != maker2 {
 		t.Fatal("LockMaker not replaced correctly")
 	}
 }
@@ -229,4 +292,56 @@ func TestContext_Close(t *testing.T) {
 	if ctx.LockMaker() != nil {
 		t.Fatal("LockMaker should be nil after Close()")
 	}
+}
+
+func TestContext_AttachToPackages(t *testing.T) {
+	ctx := NewContext()
+
+	// 设置 Logger
+	logger := &mockLogger{}
+	ctx.SetLogger(logger)
+
+	// 关联到各包
+	ctx.AttachToPackages()
+
+	if !ctx.IsAttached() {
+		t.Fatal("Context should be attached after AttachToPackages()")
+	}
+
+	// 通过 log 包获取应该能获取到 Context 中的 Logger
+	if dawnlog.GetLogger() != logger {
+		t.Fatal("log.GetLogger() should return the Logger from Context")
+	}
+
+	// 解除关联
+	ctx.DetachFromPackages()
+
+	if ctx.IsAttached() {
+		t.Fatal("Context should not be attached after DetachFromPackages()")
+	}
+
+	// 清理
+	ctx.Close()
+}
+
+func TestContext_AttachToPackages_WithTaskPool(t *testing.T) {
+	ctx := NewContext()
+
+	// 设置 TaskPool
+	pool := &mockTaskPool{}
+	ctx.SetTaskPool(pool)
+
+	// 关联到各包
+	ctx.AttachToPackages()
+
+	// 通过 task 包获取应该能获取到 Context 中的 TaskPool
+	if task.GetPool() != pool {
+		t.Fatal("task.GetPool() should return the TaskPool from Context")
+	}
+
+	// 解除关联
+	ctx.DetachFromPackages()
+
+	// 清理
+	ctx.Close()
 }

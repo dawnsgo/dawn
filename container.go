@@ -9,15 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dawnsgo/dawn/cache"
 	"github.com/dawnsgo/dawn/component"
-	"github.com/dawnsgo/dawn/config"
 	"github.com/dawnsgo/dawn/core/info"
 	"github.com/dawnsgo/dawn/etc"
-	"github.com/dawnsgo/dawn/eventbus"
-	"github.com/dawnsgo/dawn/lock"
 	"github.com/dawnsgo/dawn/log"
-	"github.com/dawnsgo/dawn/task"
 	"github.com/dawnsgo/dawn/utils/xcall"
 	"github.com/dawnsgo/dawn/utils/xos"
 )
@@ -71,6 +66,9 @@ func (c *Container) Serve(once ...bool) {
 	c.doSaveProcessID()
 
 	c.doPrintFrameworkInfo()
+
+	// 确保 Context 已关联到各包
+	c.ctx.AttachToPackages()
 
 	if err := c.doInitComponents(); err != nil {
 		log.Fatalf("init components failed: %v", err)
@@ -162,32 +160,15 @@ func (c *Container) doWaitSystemSignal() {
 }
 
 // 清理所有模块
+// 由于现在使用 Context 作为唯一数据源，只需要关闭 Context 即可
 func (c *Container) doClearModules() {
-	// 先关闭容器上下文中的资源
-	if c.ctx != nil && c.ctx != Default() {
-		c.ctx.Close()
-	}
-
-	// 然后关闭全局资源（向后兼容）
-	if err := eventbus.Close(); err != nil {
-		log.Warnf("eventbus close failed: %v", err)
-	}
-
-	if err := lock.Close(); err != nil {
-		log.Warnf("lock-maker close failed: %v", err)
-	}
-
-	if err := cache.Close(); err != nil {
-		log.Warnf("cache close failed: %v", err)
-	}
-
-	task.Release()
-
-	config.Close()
-
+	// 关闭 etc（这个不受 Context 管理）
 	etc.Close()
 
-	log.Close()
+	// 关闭 Context，会自动解除关联并关闭所有资源
+	if c.ctx != nil {
+		c.ctx.Close()
+	}
 }
 
 // 保存进程号
