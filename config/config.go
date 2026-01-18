@@ -1,8 +1,11 @@
+// Package config 提供统一的配置管理接口和实现。
+// 支持从多种配置源（文件、etcd、consul、nacos）加载和监听配置项。
 package config
 
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 
 	"github.com/dawnsgo/dawn/core/value"
 )
@@ -14,61 +17,76 @@ type ContextProvider interface {
 }
 
 var (
-	globalConfigurator Configurator
-	contextProvider    ContextProvider
-	providerMu         sync.RWMutex
+	// globalConfigurator 使用 atomic.Value 存储，无锁读取
+	globalConfigurator atomic.Value // Configurator
+
+	// contextProvider 使用 atomic.Value 存储，无锁读取
+	contextProvider atomic.Value // ContextProvider
+
+	// writeMu 保护写入操作的原子性
+	writeMu sync.Mutex
 )
+
+// contextProviderWrapper 包装器，解决 atomic.Value 存储 nil 接口的问题
+type contextProviderWrapper struct {
+	provider ContextProvider
+}
 
 // SetContextProvider 设置 Context 提供者（由 dawn 包调用）
 func SetContextProvider(provider ContextProvider) {
-	providerMu.Lock()
-	defer providerMu.Unlock()
-	contextProvider = provider
+	if provider == nil {
+		contextProvider.Store((*contextProviderWrapper)(nil))
+	} else {
+		contextProvider.Store(&contextProviderWrapper{provider})
+	}
 }
 
 // GetContextProvider 获取 Context 提供者
 func GetContextProvider() ContextProvider {
-	providerMu.RLock()
-	defer providerMu.RUnlock()
-	return contextProvider
+	if v := contextProvider.Load(); v != nil {
+		if w, ok := v.(*contextProviderWrapper); ok && w != nil {
+			return w.provider
+		}
+	}
+	return nil
 }
 
 // SetConfigurator 设置配置器
 func SetConfigurator(configurator Configurator) {
-	providerMu.Lock()
-	defer providerMu.Unlock()
+	writeMu.Lock()
+	defer writeMu.Unlock()
 
-	if globalConfigurator != nil {
-		globalConfigurator.Close()
+	// 关闭旧的 configurator
+	if old := getGlobalConfigurator(); old != nil {
+		old.Close()
 	}
-	globalConfigurator = configurator
+	if configurator != nil {
+		globalConfigurator.Store(configurator)
+	}
+}
+
+// getGlobalConfigurator 获取全局配置器（无锁）
+func getGlobalConfigurator() Configurator {
+	if v := globalConfigurator.Load(); v != nil {
+		return v.(Configurator)
+	}
+	return nil
 }
 
 // GetConfigurator 获取配置器
 // 优先从 Context 获取，如果没有关联 Context 则使用全局变量
 func GetConfigurator() Configurator {
-	providerMu.RLock()
-	defer providerMu.RUnlock()
-
-	if contextProvider != nil {
-		if configurator := contextProvider.Configurator(); configurator != nil {
+	if provider := GetContextProvider(); provider != nil {
+		if configurator := provider.Configurator(); configurator != nil {
 			return configurator
 		}
 	}
-	return globalConfigurator
+	return getGlobalConfigurator()
 }
 
 // getConfigurator 内部获取配置器（供其他函数调用）
 func getConfigurator() Configurator {
-	providerMu.RLock()
-	defer providerMu.RUnlock()
-
-	if contextProvider != nil {
-		if configurator := contextProvider.Configurator(); configurator != nil {
-			return configurator
-		}
-	}
-	return globalConfigurator
+	return GetConfigurator()
 }
 
 // SetConfiguratorWithSources 通过设置配置源来设置配置器
@@ -133,10 +151,10 @@ func Store(ctx context.Context, source string, file string, content any, overrid
 
 // Close 关闭配置监听
 func Close() {
-	providerMu.Lock()
-	defer providerMu.Unlock()
+	writeMu.Lock()
+	defer writeMu.Unlock()
 
-	if globalConfigurator != nil {
-		globalConfigurator.Close()
+	if configurator := getGlobalConfigurator(); configurator != nil {
+		configurator.Close()
 	}
 }

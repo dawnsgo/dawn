@@ -1,6 +1,9 @@
 package log
 
-import "sync"
+import (
+	"sync"
+	"sync/atomic"
+)
 
 // ContextProvider Context 提供者接口，用于避免循环依赖
 type ContextProvider interface {
@@ -9,9 +12,14 @@ type ContextProvider interface {
 }
 
 var (
-	globalLogger    Logger
-	contextProvider ContextProvider
-	providerMu      sync.RWMutex
+	// globalLogger 使用 atomic.Value 存储，无锁读取
+	globalLogger atomic.Value // Logger
+
+	// contextProvider 使用 atomic.Value 存储，无锁读取
+	contextProvider atomic.Value // ContextProvider
+
+	// writeMu 保护写入操作的原子性
+	writeMu sync.Mutex
 )
 
 func init() {
@@ -20,16 +28,26 @@ func init() {
 
 // SetContextProvider 设置 Context 提供者（由 dawn 包调用）
 func SetContextProvider(provider ContextProvider) {
-	providerMu.Lock()
-	defer providerMu.Unlock()
-	contextProvider = provider
+	if provider == nil {
+		contextProvider.Store((*contextProviderWrapper)(nil))
+	} else {
+		contextProvider.Store(&contextProviderWrapper{provider})
+	}
+}
+
+// contextProviderWrapper 包装器，解决 atomic.Value 存储 nil 接口的问题
+type contextProviderWrapper struct {
+	provider ContextProvider
 }
 
 // GetContextProvider 获取 Context 提供者
 func GetContextProvider() ContextProvider {
-	providerMu.RLock()
-	defer providerMu.RUnlock()
-	return contextProvider
+	if v := contextProvider.Load(); v != nil {
+		if w, ok := v.(*contextProviderWrapper); ok && w != nil {
+			return w.provider
+		}
+	}
+	return nil
 }
 
 // SetLogger 设置日志记录器
@@ -38,41 +56,39 @@ func SetLogger(logger Logger) {
 		return
 	}
 
-	providerMu.Lock()
-	defer providerMu.Unlock()
+	writeMu.Lock()
+	defer writeMu.Unlock()
 
-	if globalLogger != nil {
-		globalLogger.Close()
+	// 关闭旧的 logger
+	if old := getGlobalLogger(); old != nil {
+		old.Close()
 	}
 
-	globalLogger = logger
+	globalLogger.Store(logger)
+}
+
+// getGlobalLogger 获取全局 logger（无锁）
+func getGlobalLogger() Logger {
+	if v := globalLogger.Load(); v != nil {
+		return v.(Logger)
+	}
+	return nil
 }
 
 // GetLogger 获取日志记录器
 // 优先从 Context 获取，如果没有关联 Context 则使用全局变量
 func GetLogger() Logger {
-	providerMu.RLock()
-	defer providerMu.RUnlock()
-
-	if contextProvider != nil {
-		if logger := contextProvider.Logger(); logger != nil {
+	if provider := GetContextProvider(); provider != nil {
+		if logger := provider.Logger(); logger != nil {
 			return logger
 		}
 	}
-	return globalLogger
+	return getGlobalLogger()
 }
 
-// getLogger 内部获取日志记录器（不加锁，供其他函数调用）
+// getLogger 内部获取日志记录器（供其他函数调用）
 func getLogger() Logger {
-	providerMu.RLock()
-	defer providerMu.RUnlock()
-
-	if contextProvider != nil {
-		if logger := contextProvider.Logger(); logger != nil {
-			return logger
-		}
-	}
-	return globalLogger
+	return GetLogger()
 }
 
 // Print 打印日志，不含堆栈信息
@@ -175,10 +191,10 @@ func Panicf(format string, a ...any) {
 
 // Close 关闭日志
 func Close() {
-	providerMu.Lock()
-	defer providerMu.Unlock()
+	writeMu.Lock()
+	defer writeMu.Unlock()
 
-	if globalLogger != nil {
-		_ = globalLogger.Close()
+	if logger := getGlobalLogger(); logger != nil {
+		_ = logger.Close()
 	}
 }

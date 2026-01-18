@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/dawnsgo/dawn/errors"
@@ -16,9 +17,14 @@ type ContextProvider interface {
 }
 
 var (
-	globalCache     Cache
-	contextProvider ContextProvider
-	providerMu      sync.RWMutex
+	// globalCache 使用 atomic.Value 存储，无锁读取
+	globalCache atomic.Value // Cache
+
+	// contextProvider 使用 atomic.Value 存储，无锁读取
+	contextProvider atomic.Value // ContextProvider
+
+	// writeMu 保护写入操作的原子性
+	writeMu sync.Mutex
 )
 
 type SetValueFunc func() (any, error)
@@ -50,18 +56,28 @@ type Cache interface {
 	Close() error
 }
 
+// contextProviderWrapper 包装器，解决 atomic.Value 存储 nil 接口的问题
+type contextProviderWrapper struct {
+	provider ContextProvider
+}
+
 // SetContextProvider 设置 Context 提供者（由 dawn 包调用）
 func SetContextProvider(provider ContextProvider) {
-	providerMu.Lock()
-	defer providerMu.Unlock()
-	contextProvider = provider
+	if provider == nil {
+		contextProvider.Store((*contextProviderWrapper)(nil))
+	} else {
+		contextProvider.Store(&contextProviderWrapper{provider})
+	}
 }
 
 // GetContextProvider 获取 Context 提供者
 func GetContextProvider() ContextProvider {
-	providerMu.RLock()
-	defer providerMu.RUnlock()
-	return contextProvider
+	if v := contextProvider.Load(); v != nil {
+		if w, ok := v.(*contextProviderWrapper); ok && w != nil {
+			return w.provider
+		}
+	}
+	return nil
 }
 
 // SetCache 设置缓存
@@ -71,43 +87,41 @@ func SetCache(cache Cache) {
 		return
 	}
 
-	providerMu.Lock()
-	defer providerMu.Unlock()
+	writeMu.Lock()
+	defer writeMu.Unlock()
 
-	if globalCache != nil {
-		if err := globalCache.Close(); err != nil {
+	// 关闭旧的 cache
+	if old := getGlobalCache(); old != nil {
+		if err := old.Close(); err != nil {
 			log.Error("close cache failed: %v", err)
 		}
 	}
 
-	globalCache = cache
+	globalCache.Store(cache)
+}
+
+// getGlobalCache 获取全局缓存（无锁）
+func getGlobalCache() Cache {
+	if v := globalCache.Load(); v != nil {
+		return v.(Cache)
+	}
+	return nil
 }
 
 // GetCache 获取缓存
 // 优先从 Context 获取，如果没有关联 Context 则使用全局变量
 func GetCache() Cache {
-	providerMu.RLock()
-	defer providerMu.RUnlock()
-
-	if contextProvider != nil {
-		if ca := contextProvider.Cache(); ca != nil {
+	if provider := GetContextProvider(); provider != nil {
+		if ca := provider.Cache(); ca != nil {
 			return ca
 		}
 	}
-	return globalCache
+	return getGlobalCache()
 }
 
 // getCache 内部获取缓存（供其他函数调用）
 func getCache() Cache {
-	providerMu.RLock()
-	defer providerMu.RUnlock()
-
-	if contextProvider != nil {
-		if ca := contextProvider.Cache(); ca != nil {
-			return ca
-		}
-	}
-	return globalCache
+	return GetCache()
 }
 
 // Has 检测缓存是否存在
@@ -200,11 +214,11 @@ func Client() any {
 
 // Close 关闭缓存
 func Close() error {
-	providerMu.Lock()
-	defer providerMu.Unlock()
+	writeMu.Lock()
+	defer writeMu.Unlock()
 
-	if globalCache != nil {
-		return globalCache.Close()
+	if ca := getGlobalCache(); ca != nil {
+		return ca.Close()
 	}
 	return nil
 }

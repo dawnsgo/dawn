@@ -2,6 +2,7 @@ package task
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/dawnsgo/dawn/log"
 	"github.com/dawnsgo/dawn/utils/xcall"
@@ -22,9 +23,14 @@ type Pool interface {
 }
 
 var (
-	globalPool      Pool
-	contextProvider ContextProvider
-	providerMu      sync.RWMutex
+	// globalPool 使用 atomic.Value 存储，无锁读取
+	globalPool atomic.Value // Pool
+
+	// contextProvider 使用 atomic.Value 存储，无锁读取
+	contextProvider atomic.Value // ContextProvider
+
+	// writeMu 保护写入操作的原子性
+	writeMu sync.Mutex
 )
 
 func init() {
@@ -61,56 +67,66 @@ func (p *defaultPool) Release() {
 	p.pool.Release()
 }
 
+// contextProviderWrapper 包装器，解决 atomic.Value 存储 nil 接口的问题
+type contextProviderWrapper struct {
+	provider ContextProvider
+}
+
 // SetContextProvider 设置 Context 提供者（由 dawn 包调用）
 func SetContextProvider(provider ContextProvider) {
-	providerMu.Lock()
-	defer providerMu.Unlock()
-	contextProvider = provider
+	if provider == nil {
+		contextProvider.Store((*contextProviderWrapper)(nil))
+	} else {
+		contextProvider.Store(&contextProviderWrapper{provider})
+	}
 }
 
 // GetContextProvider 获取 Context 提供者
 func GetContextProvider() ContextProvider {
-	providerMu.RLock()
-	defer providerMu.RUnlock()
-	return contextProvider
+	if v := contextProvider.Load(); v != nil {
+		if w, ok := v.(*contextProviderWrapper); ok && w != nil {
+			return w.provider
+		}
+	}
+	return nil
 }
 
 // SetPool 设置任务池
 func SetPool(pool Pool) {
-	providerMu.Lock()
-	defer providerMu.Unlock()
+	writeMu.Lock()
+	defer writeMu.Unlock()
 
-	if globalPool != nil {
-		globalPool.Release()
+	// 释放旧的 pool
+	if old := getGlobalPool(); old != nil {
+		old.Release()
 	}
-	globalPool = pool
+	if pool != nil {
+		globalPool.Store(pool)
+	}
+}
+
+// getGlobalPool 获取全局任务池（无锁）
+func getGlobalPool() Pool {
+	if v := globalPool.Load(); v != nil {
+		return v.(Pool)
+	}
+	return nil
 }
 
 // GetPool 获取任务池
 // 优先从 Context 获取，如果没有关联 Context 则使用全局变量
 func GetPool() Pool {
-	providerMu.RLock()
-	defer providerMu.RUnlock()
-
-	if contextProvider != nil {
-		if pool := contextProvider.TaskPool(); pool != nil {
+	if provider := GetContextProvider(); provider != nil {
+		if pool := provider.TaskPool(); pool != nil {
 			return pool
 		}
 	}
-	return globalPool
+	return getGlobalPool()
 }
 
 // getPool 内部获取任务池（供其他函数调用）
 func getPool() Pool {
-	providerMu.RLock()
-	defer providerMu.RUnlock()
-
-	if contextProvider != nil {
-		if pool := contextProvider.TaskPool(); pool != nil {
-			return pool
-		}
-	}
-	return globalPool
+	return GetPool()
 }
 
 // AddTask 添加任务
@@ -130,11 +146,11 @@ func AddTask(task func()) {
 
 // Release 释放任务
 func Release() {
-	providerMu.Lock()
-	defer providerMu.Unlock()
+	writeMu.Lock()
+	defer writeMu.Unlock()
 
-	if globalPool != nil {
-		globalPool.Release()
+	if pool := getGlobalPool(); pool != nil {
+		pool.Release()
 	}
 }
 
