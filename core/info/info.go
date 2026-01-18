@@ -27,7 +27,7 @@ const (
 	leftBottomBorder  = "└"
 	rightBottomBorder = "┘"
 	website           = "https://github.com/orgs/dawnsgo/dawn"
-	version           = "v1.0.8"
+	version           = "v1.0.9"
 	global            = "Global"
 )
 
