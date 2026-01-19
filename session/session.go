@@ -1,6 +1,7 @@
 package session
 
 import (
+	"hash/fnv"
 	"net"
 	"sync"
 
@@ -17,6 +18,11 @@ const (
 const defaultShardCount = 32
 
 type Kind int
+
+// IsValid 检查 Kind 是否有效
+func (k Kind) IsValid() bool {
+	return k == Conn || k == User
+}
 
 func (k Kind) String() string {
 	switch k {
@@ -115,14 +121,52 @@ func (s *Session) getUserShard(uid int64) *userShard {
 	return s.userShards[uid%int64(s.shardCount)]
 }
 
-// getChannelShard 获取频道分片（使用字符串hash）
+// getChannelShard 获取频道分片（使用 FNV-1a hash 算法，性能更优）
 func (s *Session) getChannelShard(channel string) *channelShard {
-	// 使用简单的字符串hash算法
-	var hash uint32
-	for i := 0; i < len(channel); i++ {
-		hash = hash*31 + uint32(channel[i])
+	h := fnv.New32a()
+	h.Write([]byte(channel))
+	return s.channelShards[h.Sum32()%uint32(s.shardCount)]
+}
+
+// validateKind 验证 Kind 参数是否有效
+func (s *Session) validateKind(kind Kind) error {
+	if !kind.IsValid() {
+		return errors.ErrInvalidSessionKind
 	}
-	return s.channelShards[hash%uint32(s.shardCount)]
+	return nil
+}
+
+// collectConns 根据 Kind 和目标列表收集连接
+// 这是一个内部辅助方法，用于减少代码重复
+func (s *Session) collectConns(kind Kind, targets []int64) ([]network.Conn, error) {
+	if err := s.validateKind(kind); err != nil {
+		return nil, err
+	}
+
+	conns := make([]network.Conn, 0, len(targets))
+
+	switch kind {
+	case Conn:
+		for _, target := range targets {
+			shard := s.getConnShard(target)
+			shard.RLock()
+			if conn, ok := shard.items[target]; ok {
+				conns = append(conns, conn)
+			}
+			shard.RUnlock()
+		}
+	case User:
+		for _, target := range targets {
+			shard := s.getUserShard(target)
+			shard.RLock()
+			if conn, ok := shard.items[target]; ok {
+				conns = append(conns, conn)
+			}
+			shard.RUnlock()
+		}
+	}
+
+	return conns, nil
 }
 
 // AddConn 添加连接
@@ -175,6 +219,10 @@ func (s *Session) RemConn(conn network.Conn) {
 
 // Has 是否存在会话
 func (s *Session) Has(kind Kind, target int64) (ok bool, err error) {
+	if err = s.validateKind(kind); err != nil {
+		return
+	}
+
 	switch kind {
 	case Conn:
 		shard := s.getConnShard(target)
@@ -186,8 +234,6 @@ func (s *Session) Has(kind Kind, target int64) (ok bool, err error) {
 		shard.RLock()
 		_, ok = shard.items[target]
 		shard.RUnlock()
-	default:
-		err = errors.ErrInvalidSessionKind
 	}
 
 	return
@@ -323,6 +369,10 @@ func (s *Session) Multicast(kind Kind, targets []int64, message []byte) (n int64
 		return
 	}
 
+	if err = s.validateKind(kind); err != nil {
+		return
+	}
+
 	switch kind {
 	case Conn:
 		for _, target := range targets {
@@ -344,8 +394,6 @@ func (s *Session) Multicast(kind Kind, targets []int64, message []byte) (n int64
 				n++
 			}
 		}
-	default:
-		err = errors.ErrInvalidSessionKind
 	}
 
 	return
@@ -353,6 +401,10 @@ func (s *Session) Multicast(kind Kind, targets []int64, message []byte) (n int64
 
 // Broadcast 推送广播消息（异步）
 func (s *Session) Broadcast(kind Kind, message []byte) (n int64, err error) {
+	if err = s.validateKind(kind); err != nil {
+		return
+	}
+
 	switch kind {
 	case Conn:
 		for _, shard := range s.connShards {
@@ -374,8 +426,6 @@ func (s *Session) Broadcast(kind Kind, message []byte) (n int64, err error) {
 			}
 			shard.RUnlock()
 		}
-	default:
-		err = errors.ErrInvalidSessionKind
 	}
 
 	return
@@ -407,31 +457,10 @@ func (s *Session) Subscribe(kind Kind, targets []int64, channel string) (err err
 		return
 	}
 
-	// 先收集所有有效连接
-	conns := make([]network.Conn, 0, len(targets))
-
-	switch kind {
-	case Conn:
-		for _, target := range targets {
-			shard := s.getConnShard(target)
-			shard.RLock()
-			if conn, ok := shard.items[target]; ok {
-				conns = append(conns, conn)
-			}
-			shard.RUnlock()
-		}
-	case User:
-		for _, target := range targets {
-			shard := s.getUserShard(target)
-			shard.RLock()
-			if conn, ok := shard.items[target]; ok {
-				conns = append(conns, conn)
-			}
-			shard.RUnlock()
-		}
-	default:
-		err = errors.ErrInvalidSessionKind
-		return
+	// 使用辅助方法收集连接
+	conns, err := s.collectConns(kind, targets)
+	if err != nil {
+		return err
 	}
 
 	// 订阅频道（使用分片锁）
@@ -459,31 +488,10 @@ func (s *Session) Unsubscribe(kind Kind, targets []int64, channel string) (err e
 		return
 	}
 
-	// 先收集所有有效连接
-	conns := make([]network.Conn, 0, len(targets))
-
-	switch kind {
-	case Conn:
-		for _, target := range targets {
-			shard := s.getConnShard(target)
-			shard.RLock()
-			if conn, ok := shard.items[target]; ok {
-				conns = append(conns, conn)
-			}
-			shard.RUnlock()
-		}
-	case User:
-		for _, target := range targets {
-			shard := s.getUserShard(target)
-			shard.RLock()
-			if conn, ok := shard.items[target]; ok {
-				conns = append(conns, conn)
-			}
-			shard.RUnlock()
-		}
-	default:
-		err = errors.ErrInvalidSessionKind
-		return
+	// 使用辅助方法收集连接
+	conns, err := s.collectConns(kind, targets)
+	if err != nil {
+		return err
 	}
 
 	// 取消订阅（使用分片锁）
@@ -512,6 +520,10 @@ func (s *Session) doUnsubscribeInShard(shard *channelShard, channel string, conn
 
 // Stat 统计会话总数
 func (s *Session) Stat(kind Kind) (int64, error) {
+	if err := s.validateKind(kind); err != nil {
+		return 0, err
+	}
+
 	var total int64
 
 	switch kind {
@@ -527,8 +539,6 @@ func (s *Session) Stat(kind Kind) (int64, error) {
 			total += int64(len(shard.items))
 			shard.RUnlock()
 		}
-	default:
-		return 0, errors.ErrInvalidSessionKind
 	}
 
 	return total, nil
@@ -536,6 +546,10 @@ func (s *Session) Stat(kind Kind) (int64, error) {
 
 // getConn 获取会话连接
 func (s *Session) getConn(kind Kind, target int64) (network.Conn, error) {
+	if err := s.validateKind(kind); err != nil {
+		return nil, err
+	}
+
 	switch kind {
 	case Conn:
 		shard := s.getConnShard(target)
@@ -555,7 +569,7 @@ func (s *Session) getConn(kind Kind, target int64) (network.Conn, error) {
 			return nil, errors.ErrNotFoundSession
 		}
 		return conn, nil
-	default:
-		return nil, errors.ErrInvalidSessionKind
 	}
+
+	return nil, errors.ErrInvalidSessionKind
 }

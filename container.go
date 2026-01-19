@@ -24,6 +24,7 @@ const (
 	defaultShutdownMaxWaitTimeKey = "etc.shutdownMaxWaitTime" // 容器关闭最大等待时间
 	defaultCloseTimeout           = 30 * time.Second          // 默认关闭超时时间
 	defaultDestroyTimeout         = 5 * time.Second           // 默认销毁超时时间
+	DefaultComponentPriority      = 100                       // 默认组件优先级
 )
 
 // ContainerError 容器错误类型
@@ -84,19 +85,34 @@ type OrderedComponent interface {
 	Dependencies() []string
 }
 
+// RecoverableComponent 可恢复组件接口，支持组件级别的错误恢复策略
+type RecoverableComponent interface {
+	component.Component
+	// RecoveryStrategy 返回该组件的错误恢复策略
+	// 如果返回 nil，则使用容器的默认策略
+	RecoveryStrategy() *ComponentRecoveryConfig
+}
+
+// ComponentRecoveryConfig 组件级别的错误恢复配置
+type ComponentRecoveryConfig struct {
+	Strategy   ErrorRecoveryStrategy // 错误恢复策略
+	RetryConfig *RetryConfig          // 重试配置（仅当 Strategy 为 ErrorRecoveryRetry 时有效）
+}
+
 // Container 服务容器
 type Container struct {
-	ctx              *Context              // 依赖注入上下文
-	components       []component.Component // 组件列表
-	initializedComps []component.Component // 已初始化的组件（用于回滚）
-	startedComps     []component.Component // 已启动的组件（用于回滚）
-	errorHandler     ErrorHandler          // 自定义错误处理器
-	exitOnError      bool                  // 发生错误时是否退出程序
-	closeTimeout     time.Duration         // 关闭超时时间
-	destroyTimeout   time.Duration         // 销毁超时时间
-	recoveryStrategy ErrorRecoveryStrategy // 错误恢复策略
-	retryConfig      *RetryConfig          // 重试配置
-	orderedClose     bool                  // 是否按顺序关闭组件
+	ctx                      *Context                              // 依赖注入上下文
+	components               []component.Component                 // 组件列表
+	initializedComps         []component.Component                 // 已初始化的组件（用于回滚）
+	startedComps             []component.Component                 // 已启动的组件（用于回滚）
+	errorHandler             ErrorHandler                          // 自定义错误处理器
+	exitOnError              bool                                  // 发生错误时是否退出程序
+	closeTimeout             time.Duration                         // 关闭超时时间
+	destroyTimeout           time.Duration                         // 销毁超时时间
+	recoveryStrategy         ErrorRecoveryStrategy                 // 错误恢复策略
+	retryConfig              *RetryConfig                          // 重试配置
+	orderedClose             bool                                  // 是否按顺序关闭组件
+	componentRecoveryConfigs map[string]*ComponentRecoveryConfig   // 组件级别的错误恢复配置
 }
 
 // ContainerOption 容器配置选项
@@ -155,6 +171,29 @@ func WithRetryConfig(config *RetryConfig) ContainerOption {
 func WithOrderedClose(ordered bool) ContainerOption {
 	return func(c *Container) {
 		c.orderedClose = ordered
+	}
+}
+
+// WithComponentRecoveryConfig 设置特定组件的错误恢复配置
+// 这允许为不同的组件设置不同的错误恢复策略
+func WithComponentRecoveryConfig(componentName string, config *ComponentRecoveryConfig) ContainerOption {
+	return func(c *Container) {
+		if c.componentRecoveryConfigs == nil {
+			c.componentRecoveryConfigs = make(map[string]*ComponentRecoveryConfig)
+		}
+		c.componentRecoveryConfigs[componentName] = config
+	}
+}
+
+// WithComponentRecoveryConfigs 批量设置组件的错误恢复配置
+func WithComponentRecoveryConfigs(configs map[string]*ComponentRecoveryConfig) ContainerOption {
+	return func(c *Container) {
+		if c.componentRecoveryConfigs == nil {
+			c.componentRecoveryConfigs = make(map[string]*ComponentRecoveryConfig)
+		}
+		for name, config := range configs {
+			c.componentRecoveryConfigs[name] = config
+		}
 	}
 }
 
@@ -343,11 +382,16 @@ func (c *Container) doStartComponents() error {
 }
 
 // executeWithRecovery 执行操作并应用错误恢复策略
+// 支持组件级别的错误恢复配置
 func (c *Container) executeWithRecovery(phase string, comp component.Component, fn func() error) error {
-	var lastErr error
-	retryDelay := c.retryConfig.RetryDelay
+	// 获取组件的错误恢复配置
+	recoveryStrategy, retryConfig := c.getComponentRecoveryConfig(comp)
 
-	for attempt := 0; attempt <= c.retryConfig.MaxRetries; attempt++ {
+	var lastErr error
+	retryDelay := retryConfig.RetryDelay
+	maxRetries := retryConfig.MaxRetries
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
 		err := fn()
 		if err == nil {
 			return nil
@@ -355,7 +399,7 @@ func (c *Container) executeWithRecovery(phase string, comp component.Component, 
 		lastErr = err
 
 		// 根据恢复策略处理错误
-		switch c.recoveryStrategy {
+		switch recoveryStrategy {
 		case ErrorRecoveryNone:
 			return &ContainerError{
 				Phase:     phase,
@@ -365,11 +409,11 @@ func (c *Container) executeWithRecovery(phase string, comp component.Component, 
 			}
 
 		case ErrorRecoveryRetry:
-			if attempt < c.retryConfig.MaxRetries {
+			if attempt < maxRetries {
 				log.Warnf("[%s] component [%s] failed (attempt %d/%d): %v, retrying in %v...",
-					phase, comp.Name(), attempt+1, c.retryConfig.MaxRetries, err, retryDelay)
+					phase, comp.Name(), attempt+1, maxRetries, err, retryDelay)
 				time.Sleep(retryDelay)
-				retryDelay = time.Duration(float64(retryDelay) * c.retryConfig.Backoff)
+				retryDelay = time.Duration(float64(retryDelay) * retryConfig.Backoff)
 				continue
 			}
 			return &ContainerError{
@@ -534,7 +578,7 @@ func (c *Container) getComponentPriority(comp component.Component) int {
 	if ordered, ok := comp.(OrderedComponent); ok {
 		return ordered.Priority()
 	}
-	return 100 // 默认优先级
+	return DefaultComponentPriority
 }
 
 // getComponentDependencies 获取组件依赖
@@ -543,6 +587,37 @@ func (c *Container) getComponentDependencies(comp component.Component) []string 
 		return ordered.Dependencies()
 	}
 	return nil
+}
+
+// getComponentRecoveryConfig 获取组件的错误恢复配置
+// 优先级: 容器配置 > 组件接口实现 > 容器默认配置
+func (c *Container) getComponentRecoveryConfig(comp component.Component) (ErrorRecoveryStrategy, *RetryConfig) {
+	compName := comp.Name()
+
+	// 1. 检查容器级别的组件配置
+	if c.componentRecoveryConfigs != nil {
+		if config, ok := c.componentRecoveryConfigs[compName]; ok && config != nil {
+			retryConfig := config.RetryConfig
+			if retryConfig == nil {
+				retryConfig = c.retryConfig
+			}
+			return config.Strategy, retryConfig
+		}
+	}
+
+	// 2. 检查组件是否实现了 RecoverableComponent 接口
+	if recoverable, ok := comp.(RecoverableComponent); ok {
+		if config := recoverable.RecoveryStrategy(); config != nil {
+			retryConfig := config.RetryConfig
+			if retryConfig == nil {
+				retryConfig = c.retryConfig
+			}
+			return config.Strategy, retryConfig
+		}
+	}
+
+	// 3. 使用容器默认配置
+	return c.recoveryStrategy, c.retryConfig
 }
 
 // sortComponentsByDependency 按依赖关系排序组件（拓扑排序）
