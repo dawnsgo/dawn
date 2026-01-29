@@ -44,6 +44,37 @@ func NewCache(opts ...Option) *Cache {
 			MaxRetries: o.maxRetries,
 		}
 
+		// 哨兵模式配置
+		if o.mode == ModeSentinel && o.masterName != "" {
+			options.MasterName = o.masterName
+		}
+
+		// 连接池配置
+		if o.poolSize > 0 {
+			options.PoolSize = o.poolSize
+		}
+		if o.minIdleConns > 0 {
+			options.MinIdleConns = o.minIdleConns
+		}
+		if o.connMaxLifetime > 0 {
+			options.ConnMaxLifetime = o.connMaxLifetime
+		}
+		if o.connMaxIdleTime > 0 {
+			options.ConnMaxIdleTime = o.connMaxIdleTime
+		}
+
+		// 超时配置
+		if o.dialTimeout > 0 {
+			options.DialTimeout = o.dialTimeout
+		}
+		if o.readTimeout > 0 {
+			options.ReadTimeout = o.readTimeout
+		}
+		if o.writeTimeout > 0 {
+			options.WriteTimeout = o.writeTimeout
+		}
+
+		// TLS 配置
 		if o.certFile != "" && o.keyFile != "" && o.caFile != "" {
 			if options.TLSConfig, c.err = tls.MakeRedisTLSConfig(o.certFile, o.keyFile, o.caFile); c.err != nil {
 				return c
