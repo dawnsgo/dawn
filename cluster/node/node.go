@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"sync/atomic"
 
 	"github.com/dawnsgo/dawn/cluster"
 	"github.com/dawnsgo/dawn/codes"
@@ -15,8 +14,6 @@ import (
 	"github.com/dawnsgo/dawn/log"
 	"github.com/dawnsgo/dawn/registry"
 	"github.com/dawnsgo/dawn/transport"
-	"github.com/dawnsgo/dawn/utils/xcall"
-	"golang.org/x/sync/errgroup"
 )
 
 type HookHandler func(proxy *Proxy)
@@ -29,24 +26,19 @@ type serviceEntity struct {
 
 type Node struct {
 	component.Base
+	cluster.BaseCluster
 	opts        *options
-	ctx         context.Context
-	cancel      context.CancelFunc
-	state       atomic.Int32
 	evtPool     *sync.Pool
 	reqPool     *sync.Pool
 	router      *Router
 	trigger     *Trigger
 	proxy       *Proxy
 	services    []*serviceEntity
-	instances   []*registry.ServiceInstance
 	linker      *node.Server
 	fnChan      chan func()
 	scheduler   *Scheduler
 	transporter transport.Server
 	wg          *sync.WaitGroup
-	rw          sync.RWMutex
-	hooks       map[cluster.Hook][]HookHandler
 }
 
 func NewNode(opts ...Option) *Node {
@@ -57,16 +49,12 @@ func NewNode(opts ...Option) *Node {
 
 	n := &Node{}
 	n.opts = o
-	n.ctx, n.cancel = context.WithCancel(o.ctx)
 	n.proxy = newProxy(n)
 	n.router = newRouter(n)
 	n.trigger = newTrigger(n)
 	n.scheduler = newScheduler(n)
-	n.hooks = make(map[cluster.Hook][]HookHandler)
 	n.services = make([]*serviceEntity, 0)
-	n.instances = make([]*registry.ServiceInstance, 0)
 	n.fnChan = make(chan func(), 4096)
-	n.state.Store(int32(cluster.Shut))
 	n.wg = &sync.WaitGroup{}
 	n.evtPool = &sync.Pool{New: func() any {
 		evt := &event{}
@@ -114,6 +102,9 @@ func (n *Node) Init() error {
 		return errors.NewWithCode(codes.MissingComponent, "registry component is not injected")
 	}
 
+	ctx, cancel := context.WithCancel(n.opts.ctx)
+	n.InitBase(ctx, cancel, n.opts.registry, defaultTimeout)
+
 	n.runHookFunc(cluster.Init)
 
 	return nil
@@ -121,7 +112,7 @@ func (n *Node) Init() error {
 
 // Start 启动节点
 func (n *Node) Start() error {
-	if !n.state.CompareAndSwap(int32(cluster.Shut), int32(cluster.Work)) {
+	if !n.TryStart() {
 		return nil
 	}
 
@@ -152,13 +143,11 @@ func (n *Node) Start() error {
 
 // Close 关闭节点
 func (n *Node) Close() error {
-	if !n.state.CompareAndSwap(int32(cluster.Work), int32(cluster.Hang)) {
-		if !n.state.CompareAndSwap(int32(cluster.Busy), int32(cluster.Hang)) {
-			return nil
-		}
+	if !n.TryClose() {
+		return nil
 	}
 
-	n.refreshServiceInstances()
+	n.RefreshInstances()
 
 	n.runHookFunc(cluster.Close)
 
@@ -169,13 +158,13 @@ func (n *Node) Close() error {
 
 // Destroy 销毁节点服务器
 func (n *Node) Destroy() error {
-	if !n.state.CompareAndSwap(int32(cluster.Hang), int32(cluster.Shut)) {
+	if !n.TryDestroy() {
 		return nil
 	}
 
 	n.runHookFunc(cluster.Destroy)
 
-	n.deregisterServiceInstances()
+	n.DeregisterInstances()
 
 	n.stopLinkServer()
 
@@ -187,7 +176,7 @@ func (n *Node) Destroy() error {
 
 	close(n.fnChan)
 
-	n.cancel()
+	n.Cancel()
 
 	return nil
 }
@@ -316,12 +305,13 @@ func (n *Node) registerServiceInstances() error {
 		events = append(events, int(evt))
 	}
 
-	n.instances = append(n.instances, &registry.ServiceInstance{
+	instances := make([]*registry.ServiceInstance, 0, 2)
+	instances = append(instances, &registry.ServiceInstance{
 		ID:       n.opts.id,
 		Name:     cluster.Node.String(),
 		Kind:     cluster.Node.String(),
 		Alias:    n.opts.name,
-		State:    n.getState().String(),
+		State:    n.GetState().String(),
 		Routes:   routes,
 		Events:   events,
 		Endpoint: n.linker.Endpoint().String(),
@@ -334,13 +324,12 @@ func (n *Node) registerServiceInstances() error {
 		for _, item := range n.services {
 			services = append(services, item.name)
 		}
-
-		n.instances = append(n.instances, &registry.ServiceInstance{
+		instances = append(instances, &registry.ServiceInstance{
 			ID:       n.opts.id,
 			Name:     cluster.Mesh.String(),
 			Kind:     cluster.Mesh.String(),
 			Alias:    n.opts.name,
-			State:    n.getState().String(),
+			State:    n.GetState().String(),
 			Services: services,
 			Endpoint: n.transporter.Endpoint().String(),
 			Weight:   n.opts.weight,
@@ -348,112 +337,38 @@ func (n *Node) registerServiceInstances() error {
 		})
 	}
 
-	if err := n.doRegisterServiceInstances(); err != nil {
+	n.ClearInstances()
+	for _, inst := range instances {
+		n.AddInstance(inst)
+	}
+
+	if err := n.RegisterInstances(); err != nil {
 		return errors.WrapWithCode(err, codes.ServiceRegisterFailed, "register cluster instances failed")
 	}
 
 	return nil
 }
 
-// 刷新服务实例状态
-func (n *Node) refreshServiceInstances() {
-	if err := n.doRefreshServiceInstances(); err != nil {
-		log.Errorf("refresh cluster instances failed: %v", err)
-	}
-}
-
-// 解注册服务实例
-func (n *Node) deregisterServiceInstances() {
-	eg, ctx := errgroup.WithContext(n.ctx)
-	for i := range n.instances {
-		instance := n.instances[i]
-		eg.Go(func() error {
-			tctx, tcancel := context.WithTimeout(ctx, defaultTimeout)
-			defer tcancel()
-			return n.opts.registry.Deregister(tctx, instance)
-		})
-	}
-
-	if err := eg.Wait(); err != nil {
-		log.Errorf("deregister cluster instances failed: %v", err)
-	}
-}
-
-// 执行注册操作
-func (n *Node) doRegisterServiceInstances() error {
-	eg, ctx := errgroup.WithContext(n.ctx)
-
-	for i := range n.instances {
-		instance := n.instances[i]
-		eg.Go(func() error {
-			tctx, tcancel := context.WithTimeout(ctx, defaultTimeout)
-			defer tcancel()
-			return n.opts.registry.Register(tctx, instance)
-		})
-	}
-
-	return eg.Wait()
-}
-
-// 执行刷新实例状态操作
-func (n *Node) doRefreshServiceInstances() error {
-	for _, instance := range n.instances {
-		instance.State = n.getState().String()
-	}
-
-	return n.doRegisterServiceInstances()
-}
-
 // 获取状态
 func (n *Node) getState() cluster.State {
-	return cluster.State(n.state.Load())
+	return n.GetState()
 }
 
 // 更新状态
 func (n *Node) setState(state cluster.State) error {
-	n.state.Store(int32(state))
-
-	return n.doRefreshServiceInstances()
+	n.SetState(state)
+	n.RefreshInstances()
+	return nil
 }
 
-// 执行钩子函数
+// 执行钩子函数（委托 BaseCluster.RunHooks，钩子添加时已包装为 func()）
 func (n *Node) runHookFunc(hook cluster.Hook) {
-	n.rw.RLock()
-
-	if handlers, ok := n.hooks[hook]; ok {
-		wg := &sync.WaitGroup{}
-		wg.Add(len(handlers))
-
-		for i := range handlers {
-			handler := handlers[i]
-			xcall.Go(func() {
-				handler(n.proxy)
-				wg.Done()
-			})
-		}
-
-		n.rw.RUnlock()
-
-		wg.Wait()
-	} else {
-		n.rw.RUnlock()
-	}
+	n.RunHooks(hook)
 }
 
-// 添加钩子监听器
+// 添加钩子监听器（包装为 func() 委托 BaseCluster）
 func (n *Node) addHookListener(hook cluster.Hook, handler HookHandler) {
-	switch hook {
-	case cluster.Destroy:
-		n.rw.Lock()
-		n.hooks[hook] = append(n.hooks[hook], handler)
-		n.rw.Unlock()
-	default:
-		if n.getState() == cluster.Shut {
-			n.hooks[hook] = append(n.hooks[hook], handler)
-		} else {
-			log.Warnf("server is working, can't add hook handler")
-		}
-	}
+	n.AddHook(hook, func() { handler(n.proxy) })
 }
 
 // 添加服务提供者

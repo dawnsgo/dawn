@@ -108,12 +108,11 @@ func (p *provider) Unsubscribe(ctx context.Context, kind session.Kind, targets [
 
 // GetState 获取状态
 func (p *provider) GetState() (cluster.State, error) {
-	return cluster.State(p.gate.state.Load()), nil
+	return p.gate.GetState(), nil
 }
 
 // SetState 设置状态
 func (p *provider) SetState(state cluster.State) error {
-	p.gate.state.Store(int32(state))
-
+	p.gate.SetState(state)
 	return nil
 }

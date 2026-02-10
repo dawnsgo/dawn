@@ -11,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"sync/atomic"
 
 	"github.com/dawnsgo/dawn/cluster"
 	"github.com/dawnsgo/dawn/codes"
@@ -29,10 +28,10 @@ import (
 
 type Gate struct {
 	component.Base
+	cluster.BaseCluster
 	opts     *options
-	ctx      context.Context
+	ctx      context.Context // 用于 NewGate 时 newProxy，Init 时传入 InitBase
 	cancel   context.CancelFunc
-	state    atomic.Int32
 	proxy    *proxy
 	instance *registry.ServiceInstance
 	session  *session.Session
@@ -51,7 +50,6 @@ func NewGate(opts ...Option) *Gate {
 	g.ctx, g.cancel = context.WithCancel(o.ctx)
 	g.proxy = newProxy(g)
 	g.session = session.NewSession()
-	g.state.Store(int32(cluster.Shut))
 	g.wg = &sync.WaitGroup{}
 
 	return g
@@ -80,12 +78,14 @@ func (g *Gate) Init() error {
 		return errors.NewWithCode(codes.MissingComponent, "registry component is not injected")
 	}
 
+	g.InitBase(g.ctx, g.cancel, g.opts.registry, defaultTimeout)
+
 	return nil
 }
 
 // Start 启动组件
 func (g *Gate) Start() error {
-	if !g.state.CompareAndSwap(int32(cluster.Shut), int32(cluster.Work)) {
+	if !g.TryStart() {
 		return nil
 	}
 
@@ -112,13 +112,11 @@ func (g *Gate) Start() error {
 
 // Close 关闭节点
 func (g *Gate) Close() error {
-	if !g.state.CompareAndSwap(int32(cluster.Work), int32(cluster.Hang)) {
-		if !g.state.CompareAndSwap(int32(cluster.Busy), int32(cluster.Hang)) {
-			return nil
-		}
+	if !g.TryClose() {
+		return nil
 	}
 
-	g.refreshServiceInstance()
+	g.RefreshInstances()
 
 	g.wg.Wait()
 
@@ -127,17 +125,17 @@ func (g *Gate) Close() error {
 
 // Destroy 销毁组件
 func (g *Gate) Destroy() error {
-	if !g.state.CompareAndSwap(int32(cluster.Hang), int32(cluster.Shut)) {
+	if !g.TryDestroy() {
 		return nil
 	}
 
-	g.deregisterServiceInstance()
+	g.DeregisterInstances()
 
 	g.stopNetworkServer()
 
 	g.stopLinkerServer()
 
-	g.cancel()
+	g.Cancel()
 
 	return nil
 }
@@ -170,7 +168,7 @@ func (g *Gate) handleConnect(conn network.Conn) {
 
 	cid, uid := conn.ID(), conn.UID()
 
-	ctx, cancel := context.WithTimeout(g.ctx, g.opts.timeout)
+	ctx, cancel := context.WithTimeout(g.Context(), g.opts.timeout)
 	g.proxy.trigger(ctx, cluster.Connect, cid, uid)
 	cancel()
 }
@@ -180,12 +178,12 @@ func (g *Gate) handleDisconnect(conn network.Conn) {
 	g.session.RemConn(conn)
 
 	if cid, uid := conn.ID(), conn.UID(); uid != 0 {
-		ctx, cancel := context.WithTimeout(g.ctx, g.opts.timeout)
+		ctx, cancel := context.WithTimeout(g.Context(), g.opts.timeout)
 		_ = g.proxy.unbindGate(ctx, cid, uid)
 		g.proxy.trigger(ctx, cluster.Disconnect, cid, uid)
 		cancel()
 	} else {
-		ctx, cancel := context.WithTimeout(g.ctx, g.opts.timeout)
+		ctx, cancel := context.WithTimeout(g.Context(), g.opts.timeout)
 		g.proxy.trigger(ctx, cluster.Disconnect, cid, uid)
 		cancel()
 	}
@@ -196,7 +194,7 @@ func (g *Gate) handleDisconnect(conn network.Conn) {
 // 处理接收到的消息
 func (g *Gate) handleReceive(conn network.Conn, buf buffer.Buffer) {
 	cid, uid := conn.ID(), conn.UID()
-	ctx, cancel := context.WithTimeout(g.ctx, g.opts.timeout)
+	ctx, cancel := context.WithTimeout(g.Context(), g.opts.timeout)
 	g.proxy.deliver(ctx, cid, uid, buf)
 	cancel()
 }
@@ -236,50 +234,15 @@ func (g *Gate) registerServiceInstance() error {
 		Name:     cluster.Gate.String(),
 		Kind:     cluster.Gate.String(),
 		Alias:    g.opts.name,
-		State:    g.getState().String(),
+		State:    g.GetState().String(),
 		Endpoint: g.linker.Endpoint().String(),
 		Metadata: g.opts.metadata,
 	}
 
-	ctx, cancel := context.WithTimeout(g.ctx, defaultTimeout)
-	defer cancel()
+	g.ClearInstances()
+	g.AddInstance(g.instance)
 
-	if err := g.opts.registry.Register(ctx, g.instance); err != nil {
-		return errors.WrapWithCode(err, codes.ServiceRegisterFailed, "register cluster instance failed")
-	}
-
-	return nil
-}
-
-// 刷新服务实例状态
-func (g *Gate) refreshServiceInstance() {
-	if g.instance == nil {
-		return
-	}
-
-	g.instance.State = g.getState().String()
-
-	ctx, cancel := context.WithTimeout(g.ctx, defaultTimeout)
-	defer cancel()
-
-	if err := g.opts.registry.Register(ctx, g.instance); err != nil {
-		log.Errorf("refresh cluster instance failed: %v", err)
-	}
-}
-
-// 解注册服务实例
-func (g *Gate) deregisterServiceInstance() {
-	ctx, cancel := context.WithTimeout(g.ctx, defaultTimeout)
-	defer cancel()
-
-	if err := g.opts.registry.Deregister(ctx, g.instance); err != nil {
-		log.Errorf("deregister cluster instance failed: %v", err)
-	}
-}
-
-// 获取状态
-func (g *Gate) getState() cluster.State {
-	return cluster.State(g.state.Load())
+	return g.RegisterInstances()
 }
 
 // 打印组件信息

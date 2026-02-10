@@ -48,14 +48,40 @@ type Packer interface {
 	CheckHeartbeat(data []byte) (bool, error)
 }
 
+// RouteCodec 路由编解码器接口，消除重复的 switch 分支
+type RouteCodec interface {
+	// EncodeToWriter 将路由编码写入 buffer.Writer
+	EncodeToWriter(writer *buffer.Writer, route int32)
+	// EncodeToBuf 将路由编码写入 bytes.Buffer
+	EncodeToBuf(buf *bytes.Buffer, route int32) error
+	// Decode 从 reader 中解码路由
+	Decode(reader *bytes.Reader) (int32, error)
+	// Size 返回路由占用的字节数
+	Size() int
+}
+
+// SeqCodec 序列号编解码器接口
+type SeqCodec interface {
+	// EncodeToWriter 将序列号编码写入 buffer.Writer
+	EncodeToWriter(writer *buffer.Writer, seq int32)
+	// EncodeToBuf 将序列号编码写入 bytes.Buffer
+	EncodeToBuf(buf *bytes.Buffer, seq int32) error
+	// Decode 从 reader 中解码序列号
+	Decode(reader *bytes.Reader) (int32, error)
+	// Size 返回序列号占用的字节数
+	Size() int
+}
+
 type defaultPacker struct {
 	opts       *options
 	heartbeat  []byte
+	routeCodec RouteCodec
+	seqCodec   SeqCodec
 	bufferPool sync.Pool // 复用 bytes.Buffer
 }
 
 // NewPacker 创建一个新的消息打包器
-func NewPacker(opts ...Option) (*defaultPacker, error) {
+func NewPacker(opts ...Option) (Packer, error) {
 	o := defaultOptions()
 	for _, opt := range opts {
 		opt(o)
@@ -73,20 +99,24 @@ func NewPacker(opts ...Option) (*defaultPacker, error) {
 		return nil, errors.NewWithCode(codes.InvalidArgument, "the number of buffer bytes must be greater than or equal to 0")
 	}
 
-	return &defaultPacker{
-		opts:      o,
-		heartbeat: makeHeartbeat(o.byteOrder),
+	p := &defaultPacker{
+		opts:       o,
+		heartbeat:  makeHeartbeat(o.byteOrder),
+		routeCodec: newIntCodec(o.routeBytes, o.byteOrder),
+		seqCodec:   newIntCodec(o.seqBytes, o.byteOrder),
 		bufferPool: sync.Pool{
 			New: func() any {
 				return bytes.NewBuffer(make([]byte, 0, defaultSizeBytes+defaultHeaderBytes+o.routeBytes+o.seqBytes+256))
 			},
 		},
-	}, nil
+	}
+
+	return p, nil
 }
 
 // MustNewPacker 创建一个新的消息打包器，失败时 panic
 // 这是一个便捷函数，适用于初始化阶段，错误表示程序配置有误
-func MustNewPacker(opts ...Option) *defaultPacker {
+func MustNewPacker(opts ...Option) Packer {
 	p, err := NewPacker(opts...)
 	if err != nil {
 		panic("dawn/packet: create packer failed: " + err.Error())
@@ -368,104 +398,95 @@ func (p *defaultPacker) validateMessage(message *Message) error {
 	return nil
 }
 
-// writeRouteToWriter 写路由到 buffer.Writer
+// 使用 codec 委托，消除重复的 switch 分支
 func (p *defaultPacker) writeRouteToWriter(writer *buffer.Writer, route int32) {
-	switch p.opts.routeBytes {
-	case 1:
-		writer.WriteInt8s(int8(route))
-	case 2:
-		writer.WriteInt16s(p.opts.byteOrder, int16(route))
-	case 4:
-		writer.WriteInt32s(p.opts.byteOrder, route)
-	}
+	p.routeCodec.EncodeToWriter(writer, route)
 }
 
-// writeSeqToWriter 写序列号到 buffer.Writer
 func (p *defaultPacker) writeSeqToWriter(writer *buffer.Writer, seq int32) {
-	switch p.opts.seqBytes {
-	case 1:
-		writer.WriteInt8s(int8(seq))
-	case 2:
-		writer.WriteInt16s(p.opts.byteOrder, int16(seq))
-	case 4:
-		writer.WriteInt32s(p.opts.byteOrder, seq)
-	}
+	p.seqCodec.EncodeToWriter(writer, seq)
 }
 
-// writeRouteToBuf 写路由到 bytes.Buffer
 func (p *defaultPacker) writeRouteToBuf(buf *bytes.Buffer, route int32) error {
-	switch p.opts.routeBytes {
-	case 1:
-		return binary.Write(buf, p.opts.byteOrder, int8(route))
-	case 2:
-		return binary.Write(buf, p.opts.byteOrder, int16(route))
-	case 4:
-		return binary.Write(buf, p.opts.byteOrder, route)
-	}
-	return nil
+	return p.routeCodec.EncodeToBuf(buf, route)
 }
 
-// writeSeqToBuf 写序列号到 bytes.Buffer
 func (p *defaultPacker) writeSeqToBuf(buf *bytes.Buffer, seq int32) error {
-	switch p.opts.seqBytes {
+	return p.seqCodec.EncodeToBuf(buf, seq)
+}
+
+func (p *defaultPacker) readRoute(reader *bytes.Reader) (int32, error) {
+	return p.routeCodec.Decode(reader)
+}
+
+func (p *defaultPacker) readSeq(reader *bytes.Reader) (int32, error) {
+	return p.seqCodec.Decode(reader)
+}
+
+// ==================== IntCodec 通用整数编解码器 ====================
+// 统一处理 1/2/4 字节整数的编解码，消除重复的 switch 逻辑
+
+type intCodec struct {
+	size      int
+	byteOrder binary.ByteOrder
+}
+
+// newIntCodec 创建整数编解码器
+func newIntCodec(size int, byteOrder binary.ByteOrder) *intCodec {
+	return &intCodec{size: size, byteOrder: byteOrder}
+}
+
+func (c *intCodec) Size() int {
+	return c.size
+}
+
+func (c *intCodec) EncodeToWriter(writer *buffer.Writer, val int32) {
+	switch c.size {
 	case 1:
-		return binary.Write(buf, p.opts.byteOrder, int8(seq))
+		writer.WriteInt8s(int8(val))
 	case 2:
-		return binary.Write(buf, p.opts.byteOrder, int16(seq))
+		writer.WriteInt16s(c.byteOrder, int16(val))
 	case 4:
-		return binary.Write(buf, p.opts.byteOrder, seq)
+		writer.WriteInt32s(c.byteOrder, val)
+	}
+}
+
+func (c *intCodec) EncodeToBuf(buf *bytes.Buffer, val int32) error {
+	switch c.size {
+	case 0:
+		return nil
+	case 1:
+		return binary.Write(buf, c.byteOrder, int8(val))
+	case 2:
+		return binary.Write(buf, c.byteOrder, int16(val))
+	case 4:
+		return binary.Write(buf, c.byteOrder, val)
 	}
 	return nil
 }
 
-// readRoute 从 reader 读取路由
-func (p *defaultPacker) readRoute(reader *bytes.Reader) (int32, error) {
-	switch p.opts.routeBytes {
-	case 1:
-		var route int8
-		if err := binary.Read(reader, p.opts.byteOrder, &route); err != nil {
-			return 0, err
-		}
-		return int32(route), nil
-	case 2:
-		var route int16
-		if err := binary.Read(reader, p.opts.byteOrder, &route); err != nil {
-			return 0, err
-		}
-		return int32(route), nil
-	case 4:
-		var route int32
-		if err := binary.Read(reader, p.opts.byteOrder, &route); err != nil {
-			return 0, err
-		}
-		return route, nil
-	}
-	return 0, nil
-}
-
-// readSeq 从 reader 读取序列号
-func (p *defaultPacker) readSeq(reader *bytes.Reader) (int32, error) {
-	switch p.opts.seqBytes {
+func (c *intCodec) Decode(reader *bytes.Reader) (int32, error) {
+	switch c.size {
 	case 0:
 		return 0, nil
 	case 1:
-		var seq int8
-		if err := binary.Read(reader, p.opts.byteOrder, &seq); err != nil {
+		var v int8
+		if err := binary.Read(reader, c.byteOrder, &v); err != nil {
 			return 0, err
 		}
-		return int32(seq), nil
+		return int32(v), nil
 	case 2:
-		var seq int16
-		if err := binary.Read(reader, p.opts.byteOrder, &seq); err != nil {
+		var v int16
+		if err := binary.Read(reader, c.byteOrder, &v); err != nil {
 			return 0, err
 		}
-		return int32(seq), nil
+		return int32(v), nil
 	case 4:
-		var seq int32
-		if err := binary.Read(reader, p.opts.byteOrder, &seq); err != nil {
+		var v int32
+		if err := binary.Read(reader, c.byteOrder, &v); err != nil {
 			return 0, err
 		}
-		return seq, nil
+		return v, nil
 	}
 	return 0, nil
 }

@@ -1,6 +1,7 @@
 package dawn
 
 import (
+	"io"
 	"sync"
 	"sync/atomic"
 
@@ -11,6 +12,28 @@ import (
 	"github.com/dawnsgo/dawn/log"
 	"github.com/dawnsgo/dawn/task"
 )
+
+// Contextor 框架上下文接口，定义核心依赖的访问方式
+// 支持 mock 和替换，便于测试和多实例场景
+type Contextor interface {
+	// Logger 获取日志记录器
+	Logger() log.Logger
+	// Configurator 获取配置器
+	Configurator() config.Configurator
+	// Eventbus 获取事件总线
+	Eventbus() eventbus.Eventbus
+	// TaskPool 获取任务池
+	TaskPool() task.Pool
+	// Cache 获取缓存
+	Cache() cache.Cache
+	// LockMaker 获取分布式锁制造器
+	LockMaker() lock.Maker
+	// Close 关闭上下文中的所有资源
+	io.Closer
+}
+
+// 编译期检查 Context 实现 Contextor 接口
+var _ Contextor = (*Context)(nil)
 
 // Context 框架上下文，统一管理核心依赖
 // 支持多实例场景（如测试），同时保持向后兼容

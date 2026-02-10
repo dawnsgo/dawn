@@ -3,8 +3,6 @@ package mesh
 import (
 	"context"
 	"fmt"
-	"sync"
-	"sync/atomic"
 
 	"github.com/dawnsgo/dawn/cluster"
 	"github.com/dawnsgo/dawn/codes"
@@ -14,23 +12,18 @@ import (
 	"github.com/dawnsgo/dawn/log"
 	"github.com/dawnsgo/dawn/registry"
 	"github.com/dawnsgo/dawn/transport"
-	"github.com/dawnsgo/dawn/utils/xcall"
 )
 
 type HookHandler func(proxy *Proxy)
 
 type Mesh struct {
 	component.Base
+	cluster.BaseCluster
 	opts        *options
-	ctx         context.Context
-	cancel      context.CancelFunc
-	state       atomic.Int32
 	proxy       *Proxy
 	transporter transport.Server
 	services    []*serviceEntity
 	instance    *registry.ServiceInstance
-	rw          sync.RWMutex
-	hooks       map[cluster.Hook][]HookHandler
 }
 
 type serviceEntity struct {
@@ -47,11 +40,8 @@ func NewMesh(opts ...Option) *Mesh {
 
 	m := &Mesh{}
 	m.opts = o
-	m.hooks = make(map[cluster.Hook][]HookHandler)
 	m.services = make([]*serviceEntity, 0)
 	m.proxy = newProxy(m)
-	m.ctx, m.cancel = context.WithCancel(o.ctx)
-	m.state.Store(int32(cluster.Shut))
 
 	return m
 }
@@ -75,6 +65,9 @@ func (m *Mesh) Init() error {
 		return errors.NewWithCode(codes.MissingTransporter, "transporter component is not injected")
 	}
 
+	ctx, cancel := context.WithCancel(m.opts.ctx)
+	m.InitBase(ctx, cancel, m.opts.registry, defaultTimeout)
+
 	m.runHookFunc(cluster.Init)
 
 	return nil
@@ -82,7 +75,7 @@ func (m *Mesh) Init() error {
 
 // Start 启动
 func (m *Mesh) Start() error {
-	if m.state.Swap(int32(cluster.Work)) != int32(cluster.Shut) {
+	if !m.TryStart() {
 		return nil
 	}
 
@@ -107,13 +100,11 @@ func (m *Mesh) Start() error {
 
 // Close 关闭
 func (m *Mesh) Close() error {
-	if !m.state.CompareAndSwap(int32(cluster.Work), int32(cluster.Hang)) {
-		if !m.state.CompareAndSwap(int32(cluster.Busy), int32(cluster.Hang)) {
-			return nil
-		}
+	if !m.TryClose() {
+		return nil
 	}
 
-	m.refreshServiceInstance()
+	m.RefreshInstances()
 
 	m.runHookFunc(cluster.Close)
 
@@ -122,17 +113,17 @@ func (m *Mesh) Close() error {
 
 // Destroy 销毁
 func (m *Mesh) Destroy() error {
-	if m.state.Swap(int32(cluster.Shut)) == int32(cluster.Shut) {
+	if !m.TryDestroy() {
 		return nil
 	}
 
 	m.runHookFunc(cluster.Destroy)
 
-	m.deregisterServiceInstance()
+	m.DeregisterInstances()
 
 	m.stopTransportServer()
 
-	m.cancel()
+	m.Cancel()
 
 	return nil
 }
@@ -182,7 +173,7 @@ func (m *Mesh) registerServiceInstance() error {
 		Name:     cluster.Mesh.String(),
 		Kind:     cluster.Mesh.String(),
 		Alias:    m.opts.name,
-		State:    m.getState().String(),
+		State:    m.GetState().String(),
 		Endpoint: m.transporter.Endpoint().String(),
 		Services: make([]string, 0, len(m.services)),
 		Metadata: m.opts.metadata,
@@ -192,85 +183,25 @@ func (m *Mesh) registerServiceInstance() error {
 		m.instance.Services = append(m.instance.Services, item.name)
 	}
 
-	ctx, cancel := context.WithTimeout(m.ctx, defaultTimeout)
-	defer cancel()
+	m.ClearInstances()
+	m.AddInstance(m.instance)
 
-	if err := m.opts.registry.Register(ctx, m.instance); err != nil {
-		return errors.WrapWithCode(err, codes.ServiceRegisterFailed, "register cluster instance failed")
-	}
-
-	return nil
-}
-
-// 刷新服务实例状态
-func (m *Mesh) refreshServiceInstance() {
-	if m.instance == nil {
-		return
-	}
-
-	m.instance.State = m.getState().String()
-
-	ctx, cancel := context.WithTimeout(m.ctx, defaultTimeout)
-	defer cancel()
-
-	if err := m.opts.registry.Register(ctx, m.instance); err != nil {
-		log.Errorf("refresh cluster instance failed: %v", err)
-	}
-}
-
-// 解注册服务实例
-func (m *Mesh) deregisterServiceInstance() {
-	ctx, cancel := context.WithTimeout(m.ctx, defaultTimeout)
-	defer cancel()
-
-	if err := m.opts.registry.Deregister(ctx, m.instance); err != nil {
-		log.Errorf("deregister cluster instance failed: %v", err)
-	}
+	return m.RegisterInstances()
 }
 
 // 获取状态
 func (m *Mesh) getState() cluster.State {
-	return cluster.State(m.state.Load())
+	return m.GetState()
 }
 
-// 执行钩子函数
+// 执行钩子函数（委托 BaseCluster.RunHooks）
 func (m *Mesh) runHookFunc(hook cluster.Hook) {
-	m.rw.RLock()
-
-	if handlers, ok := m.hooks[hook]; ok {
-		wg := &sync.WaitGroup{}
-		wg.Add(len(handlers))
-
-		for i := range handlers {
-			handler := handlers[i]
-			xcall.Go(func() {
-				handler(m.proxy)
-				wg.Done()
-			})
-		}
-
-		m.rw.RUnlock()
-
-		wg.Wait()
-	} else {
-		m.rw.RUnlock()
-	}
+	m.RunHooks(hook)
 }
 
-// 添加钩子监听器
+// 添加钩子监听器（包装为 func() 委托 BaseCluster）
 func (m *Mesh) addHookListener(hook cluster.Hook, handler HookHandler) {
-	switch hook {
-	case cluster.Destroy:
-		m.rw.Lock()
-		m.hooks[hook] = append(m.hooks[hook], handler)
-		m.rw.Unlock()
-	default:
-		if m.getState() == cluster.Shut {
-			m.hooks[hook] = append(m.hooks[hook], handler)
-		} else {
-			log.Warnf("server is working, can't add hook handler")
-		}
-	}
+	m.AddHook(hook, func() { handler(m.proxy) })
 }
 
 // 添加服务提供者

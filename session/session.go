@@ -1,9 +1,7 @@
 package session
 
 import (
-	"hash/fnv"
 	"net"
-	"sync"
 
 	"github.com/dawnsgo/dawn/errors"
 	"github.com/dawnsgo/dawn/network"
@@ -35,31 +33,13 @@ func (k Kind) String() string {
 	return ""
 }
 
-// connShard 连接分片
-type connShard struct {
-	sync.RWMutex
-	items map[int64]network.Conn
-}
-
-// userShard 用户分片
-type userShard struct {
-	sync.RWMutex
-	items map[int64]network.Conn
-}
-
-// channelShard 频道分片
-type channelShard struct {
-	sync.RWMutex
-	items map[string]map[network.Conn]struct{}
-}
-
-// Session 会话管理器（分片锁设计）
-// 所有数据结构都使用分片锁，减少锁竞争，提高并发性能
+// Session 会话管理器（泛型 ShardMap 分片锁设计）
+// 使用 ShardMap[K,V] 统一分片存储，减少锁竞争
 type Session struct {
-	shardCount    int             // 分片数量
-	connShards    []*connShard    // 连接分片
-	userShards    []*userShard    // 用户分片
-	channelShards []*channelShard // 频道分片（优化：从全局锁改为分片锁）
+	shardCount int
+	connMap    *ShardMap[int64, network.Conn]           // 连接分片
+	userMap    *ShardMap[int64, network.Conn]           // 用户分片
+	channelMap *ShardMap[string, map[network.Conn]struct{}] // 频道分片
 }
 
 // Option 配置选项
@@ -74,7 +54,7 @@ func WithShardCount(count int) Option {
 	}
 }
 
-// NewSession 创建会话管理器
+// NewSession 创建会话管理器（内部使用泛型 ShardMap）
 func NewSession(opts ...Option) *Session {
 	s := &Session{
 		shardCount: defaultShardCount,
@@ -84,48 +64,11 @@ func NewSession(opts ...Option) *Session {
 		opt(s)
 	}
 
-	// 初始化连接分片
-	s.connShards = make([]*connShard, s.shardCount)
-	for i := 0; i < s.shardCount; i++ {
-		s.connShards[i] = &connShard{
-			items: make(map[int64]network.Conn),
-		}
-	}
-
-	// 初始化用户分片
-	s.userShards = make([]*userShard, s.shardCount)
-	for i := 0; i < s.shardCount; i++ {
-		s.userShards[i] = &userShard{
-			items: make(map[int64]network.Conn),
-		}
-	}
-
-	// 初始化频道分片（优化：从全局锁改为分片锁）
-	s.channelShards = make([]*channelShard, s.shardCount)
-	for i := 0; i < s.shardCount; i++ {
-		s.channelShards[i] = &channelShard{
-			items: make(map[string]map[network.Conn]struct{}),
-		}
-	}
+	s.connMap = NewInt64ShardMap[network.Conn](s.shardCount)
+	s.userMap = NewInt64ShardMap[network.Conn](s.shardCount)
+	s.channelMap = NewStringShardMap[map[network.Conn]struct{}](s.shardCount)
 
 	return s
-}
-
-// getConnShard 获取连接分片
-func (s *Session) getConnShard(cid int64) *connShard {
-	return s.connShards[cid%int64(s.shardCount)]
-}
-
-// getUserShard 获取用户分片
-func (s *Session) getUserShard(uid int64) *userShard {
-	return s.userShards[uid%int64(s.shardCount)]
-}
-
-// getChannelShard 获取频道分片（使用 FNV-1a hash 算法，性能更优）
-func (s *Session) getChannelShard(channel string) *channelShard {
-	h := fnv.New32a()
-	h.Write([]byte(channel))
-	return s.channelShards[h.Sum32()%uint32(s.shardCount)]
 }
 
 // validateKind 验证 Kind 参数是否有效
@@ -137,35 +80,26 @@ func (s *Session) validateKind(kind Kind) error {
 }
 
 // collectConns 根据 Kind 和目标列表收集连接
-// 这是一个内部辅助方法，用于减少代码重复
 func (s *Session) collectConns(kind Kind, targets []int64) ([]network.Conn, error) {
 	if err := s.validateKind(kind); err != nil {
 		return nil, err
 	}
 
 	conns := make([]network.Conn, 0, len(targets))
-
 	switch kind {
 	case Conn:
 		for _, target := range targets {
-			shard := s.getConnShard(target)
-			shard.RLock()
-			if conn, ok := shard.items[target]; ok {
+			if conn, ok := s.connMap.Get(target); ok {
 				conns = append(conns, conn)
 			}
-			shard.RUnlock()
 		}
 	case User:
 		for _, target := range targets {
-			shard := s.getUserShard(target)
-			shard.RLock()
-			if conn, ok := shard.items[target]; ok {
+			if conn, ok := s.userMap.Get(target); ok {
 				conns = append(conns, conn)
 			}
-			shard.RUnlock()
 		}
 	}
-
 	return conns, nil
 }
 
@@ -173,18 +107,9 @@ func (s *Session) collectConns(kind Kind, targets []int64) ([]network.Conn, erro
 func (s *Session) AddConn(conn network.Conn) {
 	cid, uid := conn.ID(), conn.UID()
 
-	// 添加到连接分片
-	connShard := s.getConnShard(cid)
-	connShard.Lock()
-	connShard.items[cid] = conn
-	connShard.Unlock()
-
-	// 如果已绑定用户，添加到用户分片
+	s.connMap.Set(cid, conn)
 	if uid != 0 {
-		userShard := s.getUserShard(uid)
-		userShard.Lock()
-		userShard.items[uid] = conn
-		userShard.Unlock()
+		s.userMap.Set(uid, conn)
 	}
 }
 
@@ -192,27 +117,16 @@ func (s *Session) AddConn(conn network.Conn) {
 func (s *Session) RemConn(conn network.Conn) {
 	cid, uid := conn.ID(), conn.UID()
 
-	// 从连接分片移除
-	connShard := s.getConnShard(cid)
-	connShard.Lock()
-	delete(connShard.items, cid)
-	connShard.Unlock()
-
-	// 从用户分片移除
+	s.connMap.Delete(cid)
 	if uid != 0 {
-		userShard := s.getUserShard(uid)
-		userShard.Lock()
-		delete(userShard.items, uid)
-		userShard.Unlock()
+		s.userMap.Delete(uid)
 	}
 
-	// 取消所有频道订阅（使用分片锁）
 	conn.Attr().Visit(func(channel, _ any) bool {
 		channelName := channel.(string)
-		shard := s.getChannelShard(channelName)
-		shard.Lock()
-		s.doUnsubscribeInShard(shard, channelName, conn)
-		shard.Unlock()
+		s.channelMap.WithShard(channelName, func(items map[string]map[network.Conn]struct{}) {
+			s.doUnsubscribeInShardMap(items, channelName, conn)
+		})
 		return true
 	})
 }
@@ -225,15 +139,9 @@ func (s *Session) Has(kind Kind, target int64) (ok bool, err error) {
 
 	switch kind {
 	case Conn:
-		shard := s.getConnShard(target)
-		shard.RLock()
-		_, ok = shard.items[target]
-		shard.RUnlock()
+		ok = s.connMap.Has(target)
 	case User:
-		shard := s.getUserShard(target)
-		shard.RLock()
-		_, ok = shard.items[target]
-		shard.RUnlock()
+		ok = s.userMap.Has(target)
 	}
 
 	return
@@ -241,55 +149,36 @@ func (s *Session) Has(kind Kind, target int64) (ok bool, err error) {
 
 // Bind 绑定用户ID
 func (s *Session) Bind(cid, uid int64) error {
-	// 获取连接
-	connShard := s.getConnShard(cid)
-	connShard.RLock()
-	conn, ok := connShard.items[cid]
-	connShard.RUnlock()
-
+	conn, ok := s.connMap.Get(cid)
 	if !ok {
 		return errors.ErrNotFoundSession
 	}
 
-	// 处理旧的用户绑定
 	if oldUID := conn.UID(); oldUID != 0 {
 		if uid == oldUID {
 			return nil
 		}
-		// 移除旧绑定
-		oldUserShard := s.getUserShard(oldUID)
-		oldUserShard.Lock()
-		delete(oldUserShard.items, oldUID)
-		oldUserShard.Unlock()
+		s.userMap.Delete(oldUID)
 	}
 
-	// 处理新 UID 的旧连接
-	userShard := s.getUserShard(uid)
-	userShard.Lock()
-	if oldConn, exists := userShard.items[uid]; exists {
-		oldConn.Unbind()
-	}
-	conn.Bind(uid)
-	userShard.items[uid] = conn
-	userShard.Unlock()
+	s.userMap.WithShard(uid, func(items map[int64]network.Conn) {
+		if oldConn, exists := items[uid]; exists {
+			oldConn.Unbind()
+		}
+		conn.Bind(uid)
+		items[uid] = conn
+	})
 
 	return nil
 }
 
 // Unbind 解绑用户ID
 func (s *Session) Unbind(uid int64) (int64, error) {
-	userShard := s.getUserShard(uid)
-	userShard.Lock()
-	conn, ok := userShard.items[uid]
+	conn, ok := s.userMap.GetAndDelete(uid)
 	if !ok {
-		userShard.Unlock()
 		return 0, errors.ErrNotFoundSession
 	}
-
 	conn.Unbind()
-	delete(userShard.items, uid)
-	userShard.Unlock()
-
 	return conn.ID(), nil
 }
 
@@ -376,21 +265,13 @@ func (s *Session) Multicast(kind Kind, targets []int64, message []byte) (n int64
 	switch kind {
 	case Conn:
 		for _, target := range targets {
-			shard := s.getConnShard(target)
-			shard.RLock()
-			conn, ok := shard.items[target]
-			shard.RUnlock()
-			if ok && conn.Push(message) == nil {
+			if conn, ok := s.connMap.Get(target); ok && conn.Push(message) == nil {
 				n++
 			}
 		}
 	case User:
 		for _, target := range targets {
-			shard := s.getUserShard(target)
-			shard.RLock()
-			conn, ok := shard.items[target]
-			shard.RUnlock()
-			if ok && conn.Push(message) == nil {
+			if conn, ok := s.userMap.Get(target); ok && conn.Push(message) == nil {
 				n++
 			}
 		}
@@ -407,25 +288,19 @@ func (s *Session) Broadcast(kind Kind, message []byte) (n int64, err error) {
 
 	switch kind {
 	case Conn:
-		for _, shard := range s.connShards {
-			shard.RLock()
-			for _, conn := range shard.items {
-				if conn.Push(message) == nil {
-					n++
-				}
+		s.connMap.RangeAll(func(_ int64, conn network.Conn) bool {
+			if conn.Push(message) == nil {
+				n++
 			}
-			shard.RUnlock()
-		}
+			return true
+		})
 	case User:
-		for _, shard := range s.userShards {
-			shard.RLock()
-			for _, conn := range shard.items {
-				if conn.Push(message) == nil {
-					n++
-				}
+		s.userMap.RangeAll(func(_ int64, conn network.Conn) bool {
+			if conn.Push(message) == nil {
+				n++
 			}
-			shard.RUnlock()
-		}
+			return true
+		})
 	}
 
 	return
@@ -433,21 +308,17 @@ func (s *Session) Broadcast(kind Kind, message []byte) (n int64, err error) {
 
 // Publish 发布频道消息（异步）
 func (s *Session) Publish(channel string, message []byte) (n int64) {
-	shard := s.getChannelShard(channel)
-	shard.RLock()
-	channels, ok := shard.items[channel]
-	if !ok {
-		shard.RUnlock()
-		return
-	}
-
-	for conn := range channels {
-		if conn.Push(message) == nil {
-			n++
+	s.channelMap.WithShardRLock(channel, func(items map[string]map[network.Conn]struct{}) {
+		channels, ok := items[channel]
+		if !ok {
+			return
 		}
-	}
-	shard.RUnlock()
-
+		for conn := range channels {
+			if conn.Push(message) == nil {
+				n++
+			}
+		}
+	})
 	return
 }
 
@@ -463,21 +334,18 @@ func (s *Session) Subscribe(kind Kind, targets []int64, channel string) (err err
 		return err
 	}
 
-	// 订阅频道（使用分片锁）
-	shard := s.getChannelShard(channel)
-	shard.Lock()
-	for _, conn := range conns {
-		conn.Attr().Set(channel, struct{}{})
-
-		if channels, ok := shard.items[channel]; ok {
-			channels[conn] = struct{}{}
-		} else {
-			channels = make(map[network.Conn]struct{}, len(targets))
-			channels[conn] = struct{}{}
-			shard.items[channel] = channels
+	s.channelMap.WithShard(channel, func(items map[string]map[network.Conn]struct{}) {
+		for _, conn := range conns {
+			conn.Attr().Set(channel, struct{}{})
+			if channels, ok := items[channel]; ok {
+				channels[conn] = struct{}{}
+			} else {
+				channels = make(map[network.Conn]struct{}, len(targets))
+				channels[conn] = struct{}{}
+				items[channel] = channels
+			}
 		}
-	}
-	shard.Unlock()
+	})
 
 	return
 }
@@ -494,26 +362,23 @@ func (s *Session) Unsubscribe(kind Kind, targets []int64, channel string) (err e
 		return err
 	}
 
-	// 取消订阅（使用分片锁）
-	shard := s.getChannelShard(channel)
-	shard.Lock()
-	for _, conn := range conns {
-		if ok := conn.Attr().Del(channel); ok {
-			s.doUnsubscribeInShard(shard, channel, conn)
+	s.channelMap.WithShard(channel, func(items map[string]map[network.Conn]struct{}) {
+		for _, conn := range conns {
+			if conn.Attr().Del(channel) {
+				s.doUnsubscribeInShardMap(items, channel, conn)
+			}
 		}
-	}
-	shard.Unlock()
+	})
 
 	return
 }
 
-// doUnsubscribeInShard 取消订阅频道（内部方法，调用前需持有分片锁）
-func (s *Session) doUnsubscribeInShard(shard *channelShard, channel string, conn network.Conn) {
-	if channels, ok := shard.items[channel]; ok {
+// doUnsubscribeInShardMap 取消订阅频道（在 WithShard 回调内调用，items 为当前分片 map）
+func (s *Session) doUnsubscribeInShardMap(items map[string]map[network.Conn]struct{}, channel string, conn network.Conn) {
+	if channels, ok := items[channel]; ok {
 		delete(channels, conn)
-
 		if len(channels) == 0 {
-			delete(shard.items, channel)
+			delete(items, channel)
 		}
 	}
 }
@@ -524,24 +389,13 @@ func (s *Session) Stat(kind Kind) (int64, error) {
 		return 0, err
 	}
 
-	var total int64
-
 	switch kind {
 	case Conn:
-		for _, shard := range s.connShards {
-			shard.RLock()
-			total += int64(len(shard.items))
-			shard.RUnlock()
-		}
+		return s.connMap.Len(), nil
 	case User:
-		for _, shard := range s.userShards {
-			shard.RLock()
-			total += int64(len(shard.items))
-			shard.RUnlock()
-		}
+		return s.userMap.Len(), nil
 	}
-
-	return total, nil
+	return 0, nil
 }
 
 // getConn 获取会话连接
@@ -552,23 +406,15 @@ func (s *Session) getConn(kind Kind, target int64) (network.Conn, error) {
 
 	switch kind {
 	case Conn:
-		shard := s.getConnShard(target)
-		shard.RLock()
-		conn, ok := shard.items[target]
-		shard.RUnlock()
-		if !ok {
-			return nil, errors.ErrNotFoundSession
+		if conn, ok := s.connMap.Get(target); ok {
+			return conn, nil
 		}
-		return conn, nil
+		return nil, errors.ErrNotFoundSession
 	case User:
-		shard := s.getUserShard(target)
-		shard.RLock()
-		conn, ok := shard.items[target]
-		shard.RUnlock()
-		if !ok {
-			return nil, errors.ErrNotFoundSession
+		if conn, ok := s.userMap.Get(target); ok {
+			return conn, nil
 		}
-		return conn, nil
+		return nil, errors.ErrNotFoundSession
 	}
 
 	return nil, errors.ErrInvalidSessionKind

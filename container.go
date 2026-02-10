@@ -198,9 +198,10 @@ func WithComponentRecoveryConfigs(configs map[string]*ComponentRecoveryConfig) C
 }
 
 // NewContainer 创建一个容器
+// 默认使用全局上下文，可通过 WithContext 选项注入自定义上下文
 func NewContainer(opts ...ContainerOption) *Container {
 	c := &Container{
-		ctx:              Default(),              // 默认使用全局上下文
+		ctx:              nil,                     // 延迟初始化，优先使用注入的上下文
 		exitOnError:      true,                   // 默认发生错误时退出
 		closeTimeout:     defaultCloseTimeout,    // 默认关闭超时
 		destroyTimeout:   defaultDestroyTimeout,  // 默认销毁超时
@@ -211,6 +212,11 @@ func NewContainer(opts ...ContainerOption) *Container {
 
 	for _, opt := range opts {
 		opt(c)
+	}
+
+	// 如果未通过 WithContext 注入上下文，则使用全局默认上下文
+	if c.ctx == nil {
+		c.ctx = Default()
 	}
 
 	// 如果配置了关闭超时，优先使用配置值
