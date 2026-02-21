@@ -38,7 +38,9 @@ func (b *BaseCluster) InitBase(ctx context.Context, cancel context.CancelFunc, r
 	b.cancel = cancel
 	b.registry = reg
 	b.timeout = timeout
-	b.hooks = make(map[Hook][]func())
+	if b.hooks == nil {
+		b.hooks = make(map[Hook][]func())
+	}
 	b.instances = make([]*registry.ServiceInstance, 0)
 	b.state.Store(int32(Shut))
 }
@@ -172,6 +174,9 @@ func (b *BaseCluster) doRegisterInstances() error {
 
 // AddHook 添加钩子监听器（线程安全）
 func (b *BaseCluster) AddHook(hook Hook, handler func()) {
+	if b.hooks == nil {
+		b.hooks = make(map[Hook][]func())
+	}
 	switch hook {
 	case Destroy:
 		// Destroy 钩子允许在任何时候添加

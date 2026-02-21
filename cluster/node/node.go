@@ -14,6 +14,7 @@ import (
 	"github.com/dawnsgo/dawn/log"
 	"github.com/dawnsgo/dawn/registry"
 	"github.com/dawnsgo/dawn/transport"
+	"github.com/dawnsgo/dawn/utils/xcall"
 )
 
 type HookHandler func(proxy *Proxy)

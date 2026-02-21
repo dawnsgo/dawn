@@ -35,7 +35,7 @@ func newProxy(mesh *Mesh) *Proxy {
 
 // Context 返回 Mesh 生命周期上下文，用于后台任务与资源清理
 func (p *Proxy) Context() context.Context {
-	return p.mesh.ctx
+	return p.mesh.Context()
 }
 
 // GetID 获取当前实例ID
